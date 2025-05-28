@@ -1,44 +1,22 @@
-const crypto = require('crypto');
-
-/**
- * Generate a random token
- * @param {number} length - Length of the token
- * @returns {string} - Random token
- */
-const generateToken = (length = 32) => {
-  return crypto.randomBytes(length).toString('hex');
+const helpers = {
+  // Format date
+  formatDate(date) {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  },
+  
+  // Tạo UTC date
+  getCurrentUTCDate() {
+    const now = new Date();
+    return this.formatDate(now);
+  }
 };
 
-/**
- * Format response object
- * @param {boolean} success - Response status
- * @param {string} message - Response message
- * @param {*} data - Response data
- * @returns {Object} - Formatted response
- */
-const formatResponse = (success, message, data = null) => {
-  return {
-    success,
-    message,
-    data,
-    timestamp: new Date().toISOString(),
-  };
-};
-
-/**
- * Handle API errors
- * @param {Error} error - Error object
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Object} - Error response
- */
-const handleError = (error, req, res) => {
-  console.error(`Error in ${req.method} ${req.originalUrl}:`, error);
-  return res.status(500).json(formatResponse(false, 'Internal server error'));
-};
-
-module.exports = {
-  generateToken,
-  formatResponse,
-  handleError,
-};
+module.exports = helpers;

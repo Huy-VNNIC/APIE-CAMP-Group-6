@@ -1,65 +1,86 @@
-const ResourceModel = require('../models/resourceModel');
-const { formatResponse } = require('../utils/helpers');
-const logger = require('../utils/logger');
+const resourceModel = require('../models/resourceModel');
 
-/**
- * Get all learning resources
- */
-const getAllResources = async (req, res) => {
-  try {
-    const { type } = req.query;
-    
-    const resources = await ResourceModel.getAll(type);
-    
-    return res.json(formatResponse(true, 'Resources retrieved successfully', resources));
-  } catch (error) {
-    logger.error('Error getting all resources:', error);
-    return res.status(500).json(formatResponse(false, 'Failed to retrieve resources'));
-  }
-};
-
-/**
- * Get resource by ID
- */
-const getResourceById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const resource = await ResourceModel.getById(id);
-    
-    if (!resource) {
-      return res.status(404).json(formatResponse(false, 'Resource not found'));
+const resourceController = {
+  // Lấy tất cả resources
+  async getAllResources(req, res) {
+    try {
+      const resources = await resourceModel.getAllResources();
+      
+      // Format dữ liệu trả về
+      const formattedResources = resources.map(resource => ({
+        id: resource.id,
+        title: resource.title,
+        type: resource.type,
+        language: resource.language,
+        author: resource.created_by_name,
+        created_at: resource.created_at
+      }));
+      
+      res.json({
+        success: true,
+        data: formattedResources
+      });
+    } catch (err) {
+      console.error('Get resources error:', err);
+      res.status(500).json({
+        success: false,
+        msg: 'Server error'
+      });
     }
-    
-    return res.json(formatResponse(true, 'Resource retrieved successfully', resource));
-  } catch (error) {
-    logger.error('Error getting resource by ID:', error);
-    return res.status(500).json(formatResponse(false, 'Failed to retrieve resource'));
-  }
-};
-
-/**
- * Search resources
- */
-const searchResources = async (req, res) => {
-  try {
-    const { keyword } = req.query;
-    
-    if (!keyword) {
-      return res.status(400).json(formatResponse(false, 'Search keyword is required'));
+  },
+  
+  // Lấy chi tiết một resource
+  async getResourceById(req, res) {
+    try {
+      const resourceId = req.params.id;
+      const resource = await resourceModel.getResourceById(resourceId);
+      
+      if (!resource) {
+        return res.status(404).json({
+          success: false,
+          msg: 'Resource not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          id: resource.id,
+          title: resource.title,
+          type: resource.type,
+          language: resource.language,
+          url: resource.url,
+          author: resource.created_by_name,
+          created_at: resource.created_at
+        }
+      });
+    } catch (err) {
+      console.error('Get resource error:', err);
+      res.status(500).json({
+        success: false,
+        msg: 'Server error'
+      });
     }
-    
-    const resources = await ResourceModel.search(keyword);
-    
-    return res.json(formatResponse(true, 'Search results', resources));
-  } catch (error) {
-    logger.error('Error searching resources:', error);
-    return res.status(500).json(formatResponse(false, 'Search failed'));
+  },
+  
+  // Lấy resources theo loại
+  async getResourcesByType(req, res) {
+    try {
+      const type = req.params.type;
+      const resources = await resourceModel.getResourcesByType(type);
+      
+      res.json({
+        success: true,
+        data: resources
+      });
+    } catch (err) {
+      console.error('Get resources by type error:', err);
+      res.status(500).json({
+        success: false,
+        msg: 'Server error'
+      });
+    }
   }
 };
 
-module.exports = {
-  getAllResources,
-  getResourceById,
-  searchResources,
-};
+module.exports = resourceController;

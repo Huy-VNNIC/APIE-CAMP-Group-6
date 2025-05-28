@@ -1,54 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const studentController = require('../controllers/studentController');
+const auth = require('../middleware/auth');
+const checkRole = require('../middleware/roleCheck');
 
-// Get dashboard
-router.get('/dashboard', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      student: {
-        id: 1,
-        name: 'Alice Johnson',
-        email: 'alice.johnson@example.com'
-      },
-      dashboardData: {
-        progress: 75,
-        current_course: "Advanced Java",
-        completed_courses: ["Intro to Python", "Algorithms"],
-        points: 1250,
-        level: 5,
-        completed_resources: 12,
-        badges: ["Fast Learner", "Code Ninja", "Algorithm Master"]
-      }
-    }
-  });
-});
+// Tất cả routes đều yêu cầu xác thực và role student
+router.use(auth);
+router.use(checkRole(['student']));
 
-// Get profile
-router.get('/profile', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      user_id: 1,
-      name: 'Alice Johnson',
-      email: 'alice.johnson@example.com',
-      verified: true,
-      dashboard_data: {
-        progress: 75,
-        current_course: "Advanced Java",
-        completed_courses: ["Intro to Python", "Algorithms"],
-        points: 1250,
-        level: 5,
-        completed_resources: 12,
-        badges: ["Fast Learner", "Code Ninja", "Algorithm Master"],
-        preferences: {
-          theme: 'dark',
-          editor_font_size: 14,
-          editor_tab_size: 2
-        }
-      }
-    }
-  });
-});
+// Lấy dashboard data
+router.get('/dashboard', studentController.getDashboard);
+
+// Cập nhật profile
+router.put('/profile', studentController.updateProfile);
 
 module.exports = router;

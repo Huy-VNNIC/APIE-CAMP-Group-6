@@ -1,147 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import useAuth from '../../hooks/useAuth';
+import React, { useState } from 'react';
 
 interface CodeEditorProps {
   initialCode: string;
   language: string;
-  readOnly?: boolean;
-  onCodeChange?: (code: string) => void;
-  onSubmit?: (code: string) => void;
+  onSubmit: (code: string) => void;
+  submitting: boolean;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ 
-  initialCode, 
-  language, 
-  readOnly = false, 
-  onCodeChange,
-  onSubmit
-}) => {
+const CodeEditor: React.FC<CodeEditorProps> = ({ initialCode, language, onSubmit, submitting }) => {
   const [code, setCode] = useState(initialCode);
-  const [isEditorReady, setIsEditorReady] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [fontSize, setFontSize] = useState(14);
-  const { currentDate, user } = useAuth();
   
-  // Placeholder for actual Monaco Editor integration
-  // In a real app, we would use Monaco Editor or CodeMirror
-  
-  useEffect(() => {
-    // Simulate editor initialization
-    const timer = setTimeout(() => {
-      setIsEditorReady(true);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newCode = e.target.value;
-    setCode(newCode);
-    if (onCodeChange) {
-      onCodeChange(newCode);
-    }
-  };
-  
-  const handleSubmit = () => {
-    if (onSubmit) {
-      onSubmit(code);
-    }
-  };
-  
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
-  
-  const increaseFontSize = () => {
-    setFontSize(prev => Math.min(prev + 2, 24));
-  };
-  
-  const decreaseFontSize = () => {
-    setFontSize(prev => Math.max(prev - 2, 10));
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(code);
   };
   
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center mb-2 text-sm text-gray-600">
-        <div>
-          <span className="mr-4">Language: {language}</span>
-          <span>Font Size: {fontSize}px</span>
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden dark:bg-gray-800">
+      <div className="bg-gray-100 px-4 py-2 border-b flex justify-between items-center dark:bg-gray-700 dark:border-gray-600">
+        <div className="flex items-center">
+          <span className="font-medium text-gray-700 dark:text-gray-300">Language:</span>
+          <select 
+            className="ml-2 bg-white border border-gray-300 text-gray-700 py-1 px-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+            value={language}
+            disabled
+          >
+            <option value={language}>{language.charAt(0).toUpperCase() + language.slice(1)}</option>
+          </select>
         </div>
-        <div>
-          <span className="mr-4">Current Date (UTC): {currentDate}</span>
-          <span>Login: {user?.login || 'Huy-VNNIC'}</span>
-        </div>
-      </div>
-      
-      <div className="flex justify-between items-center mb-2">
         <div className="flex space-x-2">
           <button
-            onClick={toggleTheme}
-            className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+            type="button"
+            className="py-1 px-3 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+            onClick={() => setCode(initialCode)}
           >
-            {theme === 'light' ? 'Dark Theme' : 'Light Theme'}
+            Reset
           </button>
           <button
-            onClick={decreaseFontSize}
-            disabled={fontSize <= 10}
-            className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
-          >
-            A-
-          </button>
-          <button
-            onClick={increaseFontSize}
-            disabled={fontSize >= 24}
-            className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
-          >
-            A+
-          </button>
-        </div>
-        
-        {!readOnly && onSubmit && (
-          <button
+            type="button"
+            className="py-1 px-3 bg-primary-600 text-white rounded text-sm hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed dark:bg-primary-700 dark:hover:bg-primary-600"
             onClick={handleSubmit}
-            className="px-3 py-1 text-sm bg-primary-500 text-white rounded hover:bg-primary-600"
+            disabled={submitting}
           >
-            Run Code
+            {submitting ? 'Running...' : 'Run Code'}
           </button>
-        )}
-      </div>
-      
-      <div className={`flex-1 border rounded-md overflow-hidden ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-300'}`}>
-        {!isEditorReady ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
-          </div>
-        ) : (
-          <textarea
-            value={code}
-            onChange={handleCodeChange}
-            readOnly={readOnly}
-            style={{ fontSize: `${fontSize}px` }}
-            className={`w-full h-full p-4 font-mono resize-none focus:outline-none ${
-              theme === 'dark' 
-                ? 'bg-gray-800 text-gray-200' 
-                : 'bg-gray-50 text-gray-800'
-            }`}
-            spellCheck={false}
-            placeholder="Write your code here..."
-          />
-        )}
-      </div>
-      
-      {!readOnly && (
-        <div className="mt-4">
-          <div className="font-medium mb-2">Output</div>
-          <div className={`p-4 border rounded-md font-mono text-sm ${
-            theme === 'dark' 
-              ? 'bg-gray-900 text-gray-300 border-gray-700' 
-              : 'bg-white text-gray-800 border-gray-300'
-          }`}>
-            {/* Placeholder for code execution output */}
-            <p>// Output will appear here after running the code</p>
-          </div>
         </div>
-      )}
+      </div>
+      
+      <div className="p-4">
+        <textarea
+          className="w-full h-80 p-4 font-mono text-sm bg-gray-50 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          spellCheck="false"
+        />
+      </div>
+      
+      <div className="bg-gray-100 px-4 py-3 dark:bg-gray-700">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Tip: Write your code and click "Run Code" to see the output.
+        </p>
+      </div>
     </div>
   );
 };

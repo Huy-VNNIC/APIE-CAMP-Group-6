@@ -1,34 +1,40 @@
 import React from 'react';
-import { Activity } from '../../types/student.types';
-import { timeAgo } from '../../utils/formatters';
+
+interface Activity {
+  id: number;
+  type: string;
+  description: string;
+  timestamp: string;
+}
 
 interface ActivityFeedProps {
   activities: Activity[];
 }
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
+  // Hàm để lấy icon dựa trên loại hoạt động
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'course_progress':
         return (
-          <div className="bg-blue-100 rounded-full p-2">
-            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          <div className="bg-blue-100 rounded-full p-2 dark:bg-blue-900/30">
+            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
         );
       case 'assignment_submission':
         return (
-          <div className="bg-green-100 rounded-full p-2">
-            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          <div className="bg-green-100 rounded-full p-2 dark:bg-green-900/30">
+            <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
         );
       default:
         return (
-          <div className="bg-gray-100 rounded-full p-2">
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <div className="bg-gray-100 rounded-full p-2 dark:bg-gray-700">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -37,40 +43,24 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
   };
   
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+    <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+      <h2 className="text-lg font-semibold mb-4 dark:text-white">Recent Activity</h2>
       
-      {activities && activities.length > 0 ? (
-        <div className="flow-root">
-          <ul className="-mb-8">
-            {activities.map((activity, index) => (
-              <li key={activity.id}>
-                <div className="relative pb-8">
-                  {index !== activities.length - 1 ? (
-                    <span className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                  ) : null}
-                  <div className="relative flex items-start space-x-3">
-                    <div className="relative">
-                      {getActivityIcon(activity.type)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div>
-                        <p className="text-sm text-gray-500">
-                          {activity.description}
-                        </p>
-                        <p className="mt-0.5 text-xs text-gray-400">
-                          {timeAgo(activity.timestamp)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+      {activities.length > 0 ? (
+        <div className="space-y-4">
+          {activities.map(activity => (
+            <div key={activity.id} className="flex items-start space-x-3">
+              {getActivityIcon(activity.type)}
+              
+              <div>
+                <p className="text-sm text-gray-800 dark:text-gray-200">{activity.description}</p>
+                <span className="text-xs text-gray-500 dark:text-gray-500">{activity.timestamp}</span>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
-        <p className="text-gray-500">No recent activities</p>
+        <p className="text-gray-500 dark:text-gray-400">No recent activities</p>
       )}
     </div>
   );
