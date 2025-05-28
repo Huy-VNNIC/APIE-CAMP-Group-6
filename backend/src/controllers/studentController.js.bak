@@ -1,0 +1,642 @@
+const { Op } = require('sequelize');
+const User = require('../models/User');
+const Student = require('../models/Student');
+const LearningResource = require('../models/LearningResource');
+const StudentSubmission = require('../models/StudentSubmission');
+const Quiz = require('../models/Quiz');
+const Ticket = require('../models/Ticket');
+const logger = require('../utils/logger');
+
+// Dashboard cho student
+exports.getDashboard = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Lấy thông tin student
+    const student = await Student.findByPk(userId, {
+      include: [{ model: User, attributes: ['name', 'email'] }]
+    });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found'
+      });
+    }
+    
+    // Lấy dashboard data từ JSON field
+    const dashboardData = student.dashboard_data || {};
+    
+    // Lấy các tài nguyên học tập mới nhất
+    const latestResources = await LearningResource.findAll({
+      order: [['created_at', 'DESC']],
+      limit: 5
+    });
+    
+    // Lấy các bài nộp gần đây
+    const recentSubmissions = await StudentSubmission.findAll({
+      where: { student_id: userId },
+      include: [{ model: LearningResource, attributes: ['title', 'type'] }],
+      order: [['submitted_at', 'DESC']],
+      limit: 5
+    });
+    
+    // Tính tỷ lệ thành công
+    const submissionStats = await StudentSubmission.findAll({
+      where: { student_id: userId },
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['status']
+    });
+    
+    // Tạo đối tượng thống kê
+    const stats = {
+      totalSubmissions: 0,
+      successRate: 0,
+      pendingCount: 0,
+      failedCount: 0
+    };
+    
+    submissionStats.forEach(stat => {
+      stats.totalSubmissions += parseInt(stat.get('count'));
+      
+      if (stat.status === 'success') {
+        stats.successCount = parseInt(stat.get('count'));
+      } else if (stat.status === 'pending') {
+        stats.pendingCount = parseInt(stat.get('count'));
+      } else if (stat.status === 'failed') {
+        stats.failedCount = parseInt(stat.get('count'));
+      }
+    });
+    
+    if (stats.totalSubmissions > 0) {
+      stats.successRate = ((stats.successCount || 0) / stats.totalSubmissions) * 100;
+    }
+    
+    // Tạo response
+    res.json({
+      success: true,
+      data: {
+        student: {
+          id: student.user_id,
+          name: student.User.name,
+          email: student.User.email
+        },
+        dashboardData: {
+          points: dashboardData.points || 0,
+          level: dashboardData.level || 1,
+          completed_resources: dashboardData.completed_resources || 0,
+          badges: dashboardData.badges || []
+        },
+        latestResources,
+        recentSubmissions,
+        stats
+      }
+    });
+  } catch (error) {
+    logger.error(`Error fetching student dashboard: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching dashboard data',
+      error: error.message
+    });
+  }
+};
+
+// Lấy profile student
+exports.getProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const student = await Student.findByPk(userId, {
+      include: [{ model: User, attributes: ['name', 'email', 'verified', 'created_at'] }]
+    });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found'
+      });
+    }
+    
+    // Lấy preferences từ dashboard_data
+    const dashboardData = student.dashboard_data || {};
+    const preferences = dashboardData.preferences || {
+      theme: 'light',
+      editor_font_size: 14,
+      editor_tab_size: 2,
+      auto_save: true
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        id: student.user_id,
+        name: student.User.name,
+        email: student.User.email,
+        verified: student.User.verified,
+        joined: student.User.created_at,
+        dashboardData: {
+          points: dashboardData.points || 0,
+          level: dashboardData.level || 1,
+          badges: dashboardData.badges || []
+        },
+        preferences
+      }
+    });
+  } catch (error) {
+    logger.error(`Error fetching student profile: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching profile data',
+      error: error.message
+    });
+  }
+};
+
+// Cập nhật profile student
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, preferences } = req.body;
+    
+    // Cập nhật user name nếu có
+    if (name) {
+      await User.update({ name }, { where: { id: userId } });
+    }
+    
+    // Lấy student record
+    const student = await Student.findByPk(userId);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found'
+      });
+    }
+    
+    // Cập nhật preferences nếu có
+    if (preferences) {
+      const dashboardData = student.dashboard_data || {};
+      dashboardData.preferences = {
+        ...(dashboardData.preferences || {}),
+        ...preferences
+      };
+      
+      // Cập nhật dashboard_data
+      await student.update({ dashboard_data: dashboardData });
+    }
+    
+    // Lấy dữ liệu đã cập nhật
+    const updatedStudent = await Student.findByPk(userId, {
+      include: [{ model: User, attributes: ['name', 'email'] }]
+    });
+    
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        id: updatedStudent.user_id,
+        name: updatedStudent.User.name,
+        preferences: updatedStudent.dashboard_data.preferences
+      }
+    });
+  } catch (error) {
+    logger.error(`Error updating student profile: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating profile',
+      error: error.message
+    });
+  }
+};
+
+// Lấy danh sách tài nguyên học tập
+exports.getLearningResources = async (req, res) => {
+  try {
+    const { type, language } = req.query;
+    const whereClause = {};
+    
+    if (type) {
+      whereClause.type = type;
+    }
+    
+    if (language) {
+      whereClause.language = language;
+    }
+    
+    // Lấy danh sách tài nguyên
+    const resources = await LearningResource.findAll({
+      where: whereClause,
+      order: [['created_at', 'DESC']],
+      include: [
+        { 
+          model: User, 
+          attributes: ['name'],
+          as: 'User'
+        }
+      ]
+    });
+    
+    res.json({
+      success: true,
+      data: resources
+    });
+  } catch (error) {
+    logger.error(`Error fetching learning resources: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching learning resources',
+      error: error.message
+    });
+  }
+};
+
+// Lấy chi tiết tài nguyên học tập
+exports.getLearningResourceDetail = async (req, res) => {
+  try {
+    const { resourceId } = req.params;
+    
+    const resource = await LearningResource.findByPk(resourceId, {
+      include: [
+        { 
+          model: User, 
+          attributes: ['name'],
+          as: 'User'
+        }
+      ]
+    });
+    
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: 'Learning resource not found'
+      });
+    }
+    
+    // Lấy submissions của student cho resource này
+    const userId = req.user.id;
+    const submissions = await StudentSubmission.findAll({
+      where: {
+        student_id: userId,
+        resource_id: resourceId
+      },
+      order: [['submitted_at', 'DESC']]
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        resource,
+        submissions
+      }
+    });
+  } catch (error) {
+    logger.error(`Error fetching resource detail: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching resource detail',
+      error: error.message
+    });
+  }
+};
+
+// Nộp bài tập code
+exports.submitCode = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { resourceId } = req.params;
+    const { code } = req.body;
+    
+    // Kiểm tra resource có tồn tại không
+    const resource = await LearningResource.findByPk(resourceId);
+    
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: 'Learning resource not found'
+      });
+    }
+    
+    // Kiểm tra resource có phải type code không
+    if (resource.type !== 'code') {
+      return res.status(400).json({
+        success: false,
+        message: 'This resource does not accept code submissions'
+      });
+    }
+    
+    // Tạo submission mới
+    const submission = await StudentSubmission.create({
+      student_id: userId,
+      resource_id: resourceId,
+      code,
+      status: 'pending',
+      submitted_at: new Date()
+    });
+    
+    // TODO: Gửi code để thực thi (có thể sử dụng message queue hoặc webhook)
+    
+    // Giả lập cập nhật kết quả (trong thực tế, sẽ có service riêng xử lý)
+    setTimeout(async () => {
+      try {
+        const result = {
+          output: "Output của code bạn: Hello, World!",
+          executionTime: "120ms",
+          memory: "45MB"
+        };
+        
+        await submission.update({
+          result: JSON.stringify(result),
+          status: 'success'
+        });
+        
+        // Cập nhật dashboard_data nếu là submission thành công đầu tiên
+        const student = await Student.findByPk(userId);
+        if (student) {
+          const dashboardData = student.dashboard_data || {};
+          dashboardData.points = (dashboardData.points || 0) + 10;
+          dashboardData.completed_resources = (dashboardData.completed_resources || 0) + 1;
+          
+          // Thêm vào recent_activities
+          if (!dashboardData.recent_activities) {
+            dashboardData.recent_activities = [];
+          }
+          
+          dashboardData.recent_activities.unshift({
+            type: 'submission',
+            resourceId: resource.id,
+            resourceTitle: resource.title,
+            date: new Date().toISOString()
+          });
+          
+          // Giới hạn số lượng recent_activities
+          if (dashboardData.recent_activities.length > 10) {
+            dashboardData.recent_activities = dashboardData.recent_activities.slice(0, 10);
+          }
+          
+          // Cập nhật level nếu cần
+          if (dashboardData.points >= 100 && dashboardData.level < 2) {
+            dashboardData.level = 2;
+            dashboardData.badges = dashboardData.badges || [];
+            dashboardData.badges.push('Level 2 Achieved');
+          } else if (dashboardData.points >= 300 && dashboardData.level < 3) {
+            dashboardData.level = 3;
+            dashboardData.badges = dashboardData.badges || [];
+            dashboardData.badges.push('Level 3 Achieved');
+          }
+          
+          await student.update({ dashboard_data: dashboardData });
+        }
+      } catch (error) {
+        logger.error(`Error updating submission result: ${error.message}`);
+      }
+    }, 2000);
+    
+    res.json({
+      success: true,
+      message: 'Code submitted successfully',
+      data: {
+        submission: {
+          id: submission.id,
+          status: 'pending',
+          submitted_at: submission.submitted_at
+        }
+      }
+    });
+  } catch (error) {
+    logger.error(`Error submitting code: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error submitting code',
+      error: error.message
+    });
+  }
+};
+
+// Lấy danh sách submissions
+exports.getSubmissions = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const submissions = await StudentSubmission.findAll({
+      where: { student_id: userId },
+      include: [
+        { 
+          model: LearningResource, 
+          attributes: ['id', 'title', 'type', 'language'] 
+        }
+      ],
+      order: [['submitted_at', 'DESC']]
+    });
+    
+    res.json({
+      success: true,
+      data: submissions
+    });
+  } catch (error) {
+    logger.error(`Error fetching submissions: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching submissions',
+      error: error.message
+    });
+  }
+};
+
+// Lấy chi tiết submission
+exports.getSubmissionDetail = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { submissionId } = req.params;
+    
+    const submission = await StudentSubmission.findByPk(submissionId, {
+      include: [
+        { 
+          model: LearningResource, 
+          attributes: ['id', 'title', 'type', 'language', 'url'] 
+        }
+      ]
+    });
+    
+    if (!submission) {
+      return res.status(404).json({
+        success: false,
+        message: 'Submission not found'
+      });
+    }
+    
+    // Kiểm tra submission có thuộc về student không
+    if (submission.student_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have access to this submission'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: submission
+    });
+  } catch (error) {
+    logger.error(`Error fetching submission detail: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching submission detail',
+      error: error.message
+    });
+  }
+};
+
+// Lấy danh sách quizzes
+exports.getQuizzes = async (req, res) => {
+  try {
+    const quizzes = await Quiz.findAll({
+      attributes: ['id', 'title', 'created_at'],
+      order: [['created_at', 'DESC']]
+    });
+    
+    res.json({
+      success: true,
+      data: quizzes
+    });
+  } catch (error) {
+    logger.error(`Error fetching quizzes: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching quizzes',
+      error: error.message
+    });
+  }
+};
+
+// Lấy chi tiết quiz
+exports.getQuizDetail = async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    
+    const quiz = await Quiz.findByPk(quizId);
+    
+    if (!quiz) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quiz not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: quiz
+    });
+  } catch (error) {
+    logger.error(`Error fetching quiz detail: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching quiz detail',
+      error: error.message
+    });
+  }
+};
+
+// Cập nhật preferences
+exports.updatePreferences = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { theme, editor_font_size, editor_tab_size, auto_save } = req.body;
+    
+    const student = await Student.findByPk(userId);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found'
+      });
+    }
+    
+    // Cập nhật preferences
+    const dashboardData = student.dashboard_data || {};
+    dashboardData.preferences = dashboardData.preferences || {};
+    
+    if (theme) dashboardData.preferences.theme = theme;
+    if (editor_font_size) dashboardData.preferences.editor_font_size = editor_font_size;
+    if (editor_tab_size) dashboardData.preferences.editor_tab_size = editor_tab_size;
+    if (auto_save !== undefined) dashboardData.preferences.auto_save = auto_save;
+    
+    await student.update({ dashboard_data: dashboardData });
+    
+    res.json({
+      success: true,
+      message: 'Preferences updated successfully',
+      data: {
+        preferences: dashboardData.preferences
+      }
+    });
+  } catch (error) {
+    logger.error(`Error updating preferences: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating preferences',
+      error: error.message
+    });
+  }
+};
+
+// Tạo ticket hỗ trợ
+exports.createSupportTicket = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { subject, message } = req.body;
+    
+    const ticket = await Ticket.create({
+      user_id: userId,
+      subject,
+      message,
+      status: 'open',
+      created_at: new Date()
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Support ticket created successfully',
+      data: {
+        id: ticket.id,
+        subject: ticket.subject,
+        status: ticket.status,
+        created_at: ticket.created_at
+      }
+    });
+  } catch (error) {
+    logger.error(`Error creating support ticket: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating support ticket',
+      error: error.message
+    });
+  }
+};
+
+// Lấy danh sách tickets
+exports.getSupportTickets = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const tickets = await Ticket.findAll({
+      where: { user_id: userId },
+      order: [['created_at', 'DESC']]
+    });
+    
+    res.json({
+      success: true,
+      data: tickets
+    });
+  } catch (error) {
+    logger.error(`Error fetching support tickets: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching support tickets',
+      error: error.message
+    });
+  }
+};

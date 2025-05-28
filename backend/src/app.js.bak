@@ -1,0 +1,68 @@
+// Import các module cần thiết
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const path = require('path');
+const fs = require('fs');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
+// Khởi tạo Express app
+const app = express();
+
+// Middleware cơ bản
+app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan('dev'));
+
+// Phục vụ file tĩnh
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Tạo thư mục public nếu chưa tồn tại
+const publicDir = path.join(__dirname, '../public');
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+}
+
+// API test endpoint đơn giản
+app.get('/api-test', (req, res) => {
+  res.json({
+    message: 'API test endpoint is working!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Swagger UI setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    message: 'Route not found',
+    path: req.originalUrl
+  });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: 'Internal Server Error',
+    error: err.message
+  });
+});
+
+module.exports = app;

@@ -1,0 +1,65 @@
+const http = require('http');
+const app = require('./src/app');
+const logger = require('./src/utils/logger');
+const { testConnection } = require('./src/config/database');
+
+// Get port
+const port = process.env.PORT || 3000;
+app.set('port', port);
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Listen on all interfaces
+server.listen(port, '0.0.0.0', async () => {
+  logger.info(`Server listening on port ${port} (0.0.0.0)`);
+  
+  try {
+    await testConnection();
+    logger.info('Database connection established successfully');
+  } catch (err) {
+    logger.error(`Database connection failed: ${err.message}`);
+  }
+});
+
+// Error handling
+server.on('error', (error) => {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
+
+  // Handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      logger.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      logger.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    logger.info('HTTP server closed');
+  });
+});
+
+// Handle unhandled exceptions
+process.on('uncaughtException', (err) => {
+  logger.error(`Uncaught Exception: ${err.message}`);
+  logger.error(err.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise);
+  logger.error('Reason:', reason);
+});
