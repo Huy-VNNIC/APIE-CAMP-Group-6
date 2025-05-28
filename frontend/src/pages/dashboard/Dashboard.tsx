@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import studentApi from '../../api/student';
 import useAuth from '../../hooks/useAuth';
+import Loader from '../../components/common/Loader';
+import Alert from '../../components/common/Alert';
+import EnrolledCourseCard from '../../components/dashboard/EnrolledCourseCard';
+import ActivityItem from '../../components/dashboard/ActivityItem';
 
 interface DashboardData {
   dashboardData: {
@@ -35,14 +39,15 @@ const Dashboard: React.FC = () => {
       try {
         setLoading(true);
         const response = await studentApi.getDashboard();
+        
         if (response.success) {
           setDashboardData(response.data);
         } else {
-          setError(response.message || 'Error fetching dashboard data');
+          setError(response.message || 'Failed to fetch dashboard data');
         }
       } catch (err: any) {
-        console.error('Dashboard fetch error:', err);
-        setError(err.message || 'An unknown error occurred');
+        console.error('Dashboard error:', err);
+        setError(err.message || 'An error occurred');
       } finally {
         setLoading(false);
       }
@@ -52,16 +57,27 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return dateString;
+    }
   };
 
   if (loading) {
     return (
       <div className="container">
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <div className="loader"></div>
-          <p>Loading your dashboard...</p>
+          <Loader />
+          <p>Đang tải dữ liệu từ database...</p>
         </div>
       </div>
     );
@@ -71,7 +87,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="container">
         <div className="card" style={{ borderLeft: '4px solid var(--danger)', padding: '1rem' }}>
-          <h2 style={{ color: 'var(--danger)' }}>Error</h2>
+          <h2 style={{ color: 'var(--danger)' }}>Lỗi</h2>
           <p>{error}</p>
         </div>
       </div>
@@ -82,7 +98,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="container">
         <div className="card">
-          <p>No dashboard data available</p>
+          <p>Không có dữ liệu dashboard</p>
         </div>
       </div>
     );
@@ -164,7 +180,7 @@ const Dashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p>No courses enrolled yet.</p>
+              <p>Chưa đăng ký khóa học nào. Dữ liệu được lấy từ bảng learning_resources và student_submissions.</p>
             )}
           </div>
         </div>
@@ -183,7 +199,7 @@ const Dashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p>No recent activities.</p>
+              <p>Chưa có hoạt động nào. Dữ liệu được lấy từ bảng student_submissions.</p>
             )}
           </div>
         </div>
