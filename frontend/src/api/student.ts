@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { ApiResponse, DashboardResponse, ResourcesResponse } from '../types/student.types';
 
 // Hàm trợ giúp để tạo mock data
@@ -8,11 +7,6 @@ const studentApi = {
   // Lấy dữ liệu dashboard
   getDashboard: async (): Promise<ApiResponse<DashboardResponse['data']>> => {
     try {
-      // Trong thực tế, sẽ là API call như:
-      // const response = await axios.get('/api/student/dashboard');
-      // return response.data;
-      
-      // Mocking response
       await delay(800);
       
       return {
@@ -96,11 +90,6 @@ const studentApi = {
   // Lấy danh sách các học liệu
   getLearningResources: async (): Promise<ApiResponse<ResourcesResponse['data']>> => {
     try {
-      // Trong thực tế, sẽ là API call như:
-      // const response = await axios.get('/api/learning/resources');
-      // return response.data;
-      
-      // Mocking response
       await delay(800);
       
       return {
@@ -109,7 +98,7 @@ const studentApi = {
           {
             id: 1,
             title: 'Introduction to JavaScript',
-            description: 'Learn the basics of JavaScript programming language. This course covers variables, data types, functions, and control structures.',
+            description: 'Learn the basics of JavaScript programming language.',
             type: 'video',
             created_at: '2025-05-20 14:30:00',
             tags: ['javascript', 'beginner', 'programming']
@@ -117,43 +106,11 @@ const studentApi = {
           {
             id: 2,
             title: 'React Hooks Practice',
-            description: 'Practice using React hooks with this coding exercise. You will implement useState, useEffect, and custom hooks.',
+            description: 'Practice using React hooks with this coding exercise.',
             type: 'code',
             created_at: '2025-05-22 10:45:00',
             tags: ['react', 'hooks', 'intermediate']
-          },
-          {
-            id: 3,
-            title: 'CSS Grid Layout Guide',
-            description: 'A comprehensive guide to CSS Grid Layout. Learn how to create complex web layouts with CSS Grid.',
-            type: 'document',
-            created_at: '2025-05-18 09:15:00',
-            tags: ['css', 'grid', 'layout']
-          },
-          {
-            id: 4,
-            title: 'JavaScript Array Methods',
-            description: 'Master JavaScript array methods like map, filter, reduce, and more. Includes practical examples and exercises.',
-            type: 'video',
-            created_at: '2025-05-15 16:20:00',
-            tags: ['javascript', 'arrays', 'methods']
-          },
-          {
-            id: 5,
-            title: 'Web Accessibility Quiz',
-            description: 'Test your knowledge of web accessibility practices with this interactive quiz.',
-            type: 'quiz',
-            created_at: '2025-05-21 11:30:00',
-            tags: ['accessibility', 'a11y', 'web standards']
-          },
-          {
-            id: 6,
-            title: 'Build a REST API with Node.js',
-            description: 'Learn how to build a RESTful API using Node.js, Express, and MongoDB. Includes authentication and error handling.',
-            type: 'code',
-            created_at: '2025-05-19 13:45:00',
-            tags: ['node.js', 'express', 'api', 'mongodb']
-          },
+          }
         ],
         message: 'Resources retrieved successfully'
       };
@@ -169,14 +126,8 @@ const studentApi = {
   // Lấy chi tiết một học liệu
   getResourceDetail: async (resourceId: number): Promise<ApiResponse<any>> => {
     try {
-      // Trong thực tế, sẽ là API call như:
-      // const response = await axios.get(`/api/learning/resources/${resourceId}`);
-      // return response.data;
-      
-      // Mocking response
       await delay(600);
       
-      // Mẫu dữ liệu cho một vài resource ID
       if (resourceId === 1) {
         return {
           success: true,
@@ -193,40 +144,8 @@ const studentApi = {
           },
           message: 'Resource retrieved successfully'
         };
-      } else if (resourceId === 2) {
-        return {
-          success: true,
-          data: {
-            id: 2,
-            title: "React Hooks Practice",
-            description: "Practice using React hooks with this coding exercise",
-            type: "code",
-            content: `import React, { useState } from 'react';
-
-function Counter() {
-  // TODO: Implement a counter using useState
-  // It should have increment and decrement functions
-  
-  return (
-    <div>
-      <h2>Counter: 0</h2>
-      <button>Increment</button>
-      <button>Decrement</button>
-    </div>
-  );
-}
-
-export default Counter;`,
-            created_at: "2025-05-22 10:45:00",
-            updated_at: "2025-05-22 10:45:00",
-            tags: ["react", "hooks", "intermediate"],
-            author: "Jane Doe"
-          },
-          message: 'Resource retrieved successfully'
-        };
       }
       
-      // Nếu không tìm thấy resource
       return {
         success: false,
         message: 'Resource not found'
@@ -240,7 +159,99 @@ export default Counter;`,
     }
   },
   
-  // API call khác có thể được thêm vào đây
+  // Thêm hàm updatePreferences cho Profile.tsx
+  updatePreferences: async (preferences: any): Promise<ApiResponse<any>> => {
+    try {
+      await delay(800);
+      
+      return {
+        success: true,
+        data: {
+          message: 'Preferences updated successfully',
+          preferences
+        },
+        message: 'Preferences updated successfully'
+      };
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      return {
+        success: false,
+        message: 'Failed to update preferences'
+      };
+    }
+  },
+
+  // Thêm hàm getProfile cho Profile.tsx
+  getProfile: async (): Promise<ApiResponse<any>> => {
+    try {
+      await delay(600);
+      
+      return {
+        success: true,
+        data: {
+          id: 1,
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          login: 'Huy-VNNIC',
+          bio: 'Frontend developer with a passion for learning',
+          preferences: {
+            emailNotifications: true,
+            darkMode: false,
+            language: 'en'
+          },
+          enrolledCourses: 3,
+          completedCourses: 1,
+          achievements: [
+            {
+              id: 1,
+              name: 'Getting Started',
+              description: 'Completed your first course',
+              dateAwarded: '2025-04-15 10:30:00'
+            },
+            {
+              id: 2,
+              name: 'Code Master',
+              description: 'Completed 10 coding challenges',
+              dateAwarded: '2025-05-20 14:45:00'
+            }
+          ]
+        },
+        message: 'Profile retrieved successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch profile'
+      };
+    }
+  },
+  
+  // Thêm hàm updateProfile cho Profile.tsx
+  updateProfile: async (profileData: any): Promise<ApiResponse<any>> => {
+    try {
+      await delay(800);
+      
+      return {
+        success: true,
+        data: {
+          message: 'Profile updated successfully',
+          profile: {
+            ...profileData,
+            id: 1,
+            login: 'Huy-VNNIC'
+          }
+        },
+        message: 'Profile updated successfully'
+      };
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return {
+        success: false,
+        message: 'Failed to update profile'
+      };
+    }
+  }
 };
 
 export default studentApi;

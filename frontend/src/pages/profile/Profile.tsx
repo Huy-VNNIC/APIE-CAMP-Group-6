@@ -1,694 +1,448 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../hooks/useAuth';
-import { getProfile, updateProfile, updatePreferences } from '../../api/student';
-import { changePassword } from '../../api/auth';
-import { StudentProfile } from '../../types/student.types';
-import { User } from '../../types/auth.types';
-import toast from 'react-hot-toast';
-import {
-  UserIcon,
-  KeyIcon,
-  AdjustmentsHorizontalIcon,
-  ShieldCheckIcon,
-  BellIcon,
-  LockClosedIcon,
-  CheckCircleIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline';
+import useAuth from '../../hooks/useAuth';
+import DashboardLayout from '../../layouts/DashboardLayout';
+import studentApi from '../../api/student';
+import Alert from '../../components/common/Alert';
+import Loader from '../../components/common/Loader';
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [userData, setUserData] = useState<User | null>(user);
-  const [profileData, setProfileData] = useState<StudentProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('profile');
+  const { user, currentDate } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'security'>('profile');
   
   // Form states
-  const [name, setName] = useState<string>(user?.name || '');
-  const [email, setEmail] = useState<string>(user?.email || '');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    bio: ''
+  });
   
-  // Password change states
-  const [currentPassword, setCurrentPassword] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [passwordError, setPasswordError] = useState<string>('');
-  const [changingPassword, setChangingPassword] = useState<boolean>(false);
+  const [preferencesData, setPreferencesData] = useState({
+    emailNotifications: false,
+    darkMode: false,
+    language: 'en'
+  });
   
-  // Theme preference
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
-  
-  // Editor preferences
-  const [editorFontSize, setEditorFontSize] = useState<number>(14);
-  const [editorTabSize, setEditorTabSize] = useState<number>(2);
-  const [autoSave, setAutoSave] = useState<boolean>(true);
-  
-  // Notification preferences
-  const [emailNotifications, setEmailNotifications] = useState<boolean>(true);
-  const [resourceNotifications, setResourceNotifications] = useState<boolean>(true);
-  const [achievementNotifications, setAchievementNotifications] = useState<boolean>(true);
+  const [securityData, setSecurityData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   
   useEffect(() => {
-    const fetchProfileData = async () => {
+    const fetchProfile = async () => {
       try {
-        setLoading(true);
-        // In a real implementation, uncomment this:
-        // const data = await getProfile();
-        // setProfileData(data);
+        const response = await studentApi.getProfile();
         
-        // Mock data for now
-        const mockProfile: StudentProfile = {
-          user_id: user?.id || 0,
-          name: user?.name || '',
-          email: user?.email || '',
-          verified: true,
-          dashboard_data: {
-            points: 1250,
-            level: 5,
-            completed_resources: 12,
-            badges: ['Fast Learner', 'Code Ninja', 'Algorithm Master'],
-            preferences: {
-              theme: 'dark',
-              editor_font_size: 14,
-              editor_tab_size: 2,
-              auto_save: true
-            }
-          }
-        };
-        
-        setProfileData(mockProfile);
-        
-        // Update form states
-        if (user) {
-          setName(user.name);
-          setEmail(user.email);
+        if (response.success) {
+          setProfile(response.data);
+          setFormData({
+            name: response.data.name,
+            email: response.data.email,
+            bio: response.data.bio || ''
+          });
+          setPreferencesData({
+            emailNotifications: response.data.preferences.emailNotifications,
+            darkMode: response.data.preferences.darkMode,
+            language: response.data.preferences.language
+          });
+        } else {
+          setError('Failed to load profile');
         }
-        
-        // Get theme from localStorage
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') setTheme('dark');
-        else if (savedTheme === 'light') setTheme('light');
-        else setTheme('system');
-        
-        // Set editor preferences
-        if (mockProfile.dashboard_data.preferences) {
-          const prefs = mockProfile.dashboard_data.preferences;
-          setEditorFontSize(prefs.editor_font_size);
-          setEditorTabSize(prefs.editor_tab_size);
-          setAutoSave(prefs.auto_save);
-        }
-      } catch (error) {
-        toast.error('Failed to load profile data');
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError('An error occurred while loading your profile');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchProfileData();
-  }, [user]);
-
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+    fetchProfile();
+  }, []);
+  
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!userData) return;
     
     try {
       setLoading(true);
-      // In a real implementation, uncomment this:
-      // await updateProfile({ name });
+      const response = await studentApi.updateProfile(formData);
       
-      // Update local state
-      setUserData({
-        ...userData,
-        name
-      });
-      
-      toast.success('Profile updated successfully');
-    } catch (error) {
-      // Error handled by axios interceptor
+      if (response.success) {
+        setSuccessMessage('Profile updated successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.message || 'Failed to update profile');
+        setTimeout(() => setError(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError('An error occurred while updating your profile');
+      setTimeout(() => setError(''), 3000);
     } finally {
       setLoading(false);
     }
   };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
+  
+  const handlePreferencesSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError('');
-    
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
-    
-    if (newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters long');
-      return;
-    }
     
     try {
-      setChangingPassword(true);
-      // In a real implementation, uncomment this:
-      // await changePassword(currentPassword, newPassword);
+      setLoading(true);
+      const response = await studentApi.updatePreferences(preferencesData);
       
-      // Clear form fields
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      
-      toast.success('Password changed successfully');
-    } catch (error) {
-      // Error handled by axios interceptor
+      if (response.success) {
+        setSuccessMessage('Preferences updated successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.message || 'Failed to update preferences');
+        setTimeout(() => setError(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error updating preferences:', err);
+      setError('An error occurred while updating your preferences');
+      setTimeout(() => setError(''), 3000);
     } finally {
-      setChangingPassword(false);
-    }
-  };
-
-  const handleThemeChange = (selectedTheme: 'light' | 'dark' | 'system') => {
-    setTheme(selectedTheme);
-    
-    if (selectedTheme === 'system') {
-      localStorage.removeItem('theme');
-      
-      // Apply theme based on system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } else {
-      localStorage.setItem('theme', selectedTheme);
-      
-      if (selectedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-    
-    // Save preference to API
-    updatePreferences({ theme: selectedTheme })
-      .then(() => toast.success(`Theme set to ${selectedTheme}`))
-      .catch(() => {/* Error handled by axios interceptor */});
-  };
-  
-  const saveEditorPreferences = async () => {
-    try {
-      // In a real implementation, uncomment this:
-      // await updatePreferences({
-      //   editor_font_size: editorFontSize,
-      //   editor_tab_size: editorTabSize,
-      //   auto_save: autoSave
-      // });
-      
-      toast.success('Editor preferences saved');
-    } catch (error) {
-      // Error handled by axios interceptor
+      setLoading(false);
     }
   };
   
-  const saveNotificationPreferences = async () => {
+  const handleSecuritySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (securityData.newPassword !== securityData.confirmPassword) {
+      setError('New passwords do not match');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    
     try {
-      // In a real implementation, uncomment this:
-      // await updatePreferences({
-      //   email_notifications: emailNotifications,
-      //   resource_notifications: resourceNotifications,
-      //   achievement_notifications: achievementNotifications
-      // });
+      setLoading(true);
+      // Simulating API call
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      toast.success('Notification preferences saved');
-    } catch (error) {
-      // Error handled by axios interceptor
+      setSuccessMessage('Password updated successfully');
+      setSecurityData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error updating password:', err);
+      setError('An error occurred while updating your password');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'profile':
-        return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Personal Information</h2>
-            <form onSubmit={handleUpdateProfile}>
-              <div className="grid grid-cols-1 gap-6">
+  
+  if (loading && !profile) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader />
+        </div>
+      </DashboardLayout>
+    );
+  }
+  
+  return (
+    <DashboardLayout>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Profile</h1>
+        <div className="text-sm text-gray-600 mt-1 dark:text-gray-400">
+          <p>Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): {currentDate}</p>
+          <p>Current User's Login: {user?.login || 'Huy-VNNIC'}</p>
+        </div>
+      </div>
+      
+      {successMessage && (
+        <Alert type="success" message={successMessage} onClose={() => setSuccessMessage('')} />
+      )}
+      
+      {error && (
+        <Alert type="error" message={error} onClose={() => setError('')} />
+      )}
+      
+      <div className="bg-white rounded-lg shadow-sm dark:bg-gray-800">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'profile'
+                  ? 'border-primary-500 text-primary-600 dark:border-primary-400 dark:text-primary-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              Profile Information
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('preferences')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'preferences'
+                  ? 'border-primary-500 text-primary-600 dark:border-primary-400 dark:text-primary-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              Preferences
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'security'
+                  ? 'border-primary-500 text-primary-600 dark:border-primary-400 dark:text-primary-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              Security
+            </button>
+          </nav>
+        </div>
+        
+        <div className="p-6">
+          {activeTab === 'profile' && (
+            <form onSubmit={handleProfileSubmit}>
+              <div className="space-y-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Full Name
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Name
                   </label>
                   <input
                     type="text"
-                    name="name"
                     id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="form-input"
-                    placeholder="Your name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
                   />
                 </div>
+                
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email Address
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Email
                   </label>
                   <input
                     type="email"
-                    name="email"
                     id="email"
-                    value={email}
-                    disabled
-                    className="form-input bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
-                    placeholder="your.email@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
                   />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Email address cannot be changed
-                  </p>
                 </div>
+                
+                <div>
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    rows={4}
+                    value={formData.bio}
+                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                </div>
+                
                 <div>
                   <button
                     type="submit"
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600"
                     disabled={loading}
-                    className="btn-primary"
                   >
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </div>
             </form>
-          </div>
-        );
-      case 'security':
-        return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Change Password</h2>
-            <form onSubmit={handleChangePassword}>
-              <div className="grid grid-cols-1 gap-6">
-                <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Current Password
-                  </label>
-                  <input
-                    type="password"
-                    name="currentPassword"
-                    id="currentPassword"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="form-input"
-                    placeholder="••••••••"
-                    required
-                  />
+          )}
+          
+          {activeTab === 'preferences' && (
+            <form onSubmit={handlePreferencesSubmit}>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-md font-medium text-gray-700 dark:text-gray-300">Email Notifications</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive notifications about your progress and new resources</p>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="emailNotifications"
+                      checked={preferencesData.emailNotifications}
+                      onChange={(e) => setPreferencesData({...preferencesData, emailNotifications: e.target.checked})}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    name="newPassword"
-                    id="newPassword"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className={`form-input ${passwordError ? 'ring-red-500 border-red-500' : ''}`}
-                    placeholder="••••••••"
-                    required
-                  />
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-md font-medium text-gray-700 dark:text-gray-300">Dark Mode</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Enable dark mode for the interface</p>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="darkMode"
+                      checked={preferencesData.darkMode}
+                      onChange={(e) => setPreferencesData({...preferencesData, darkMode: e.target.checked})}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
                 </div>
+                
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Confirm New Password
+                  <label htmlFor="language" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Language
                   </label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`form-input ${passwordError ? 'ring-red-500 border-red-500' : ''}`}
-                    placeholder="••••••••"
-                    required
-                  />
-                  {passwordError && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-500">{passwordError}</p>
-                  )}
+                  <select
+                    id="language"
+                    value={preferencesData.language}
+                    onChange={(e) => setPreferencesData({...preferencesData, language: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                    <option value="es">Spanish</option>
+                    <option value="de">German</option>
+                    <option value="vi">Vietnamese</option>
+                  </select>
                 </div>
+                
                 <div>
                   <button
                     type="submit"
-                    disabled={changingPassword}
-                    className="btn-primary"
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600"
+                    disabled={loading}
                   >
-                    {changingPassword ? 'Changing...' : 'Change Password'}
+                    {loading ? 'Saving...' : 'Save Preferences'}
                   </button>
                 </div>
               </div>
             </form>
-            
-            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Login Sessions</h2>
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Current Session</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Started at: {new Date().toLocaleString()}</p>
-                  </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></div>Active
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <button className="text-sm text-red-600 dark:text-red-500 font-medium hover:underline">
-                  Log out of all other sessions
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      case 'preferences':
-        return (
-          <div className="space-y-8">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Appearance</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div
-                  className={`p-4 border rounded-lg flex flex-col items-center cursor-pointer transition-all ${
-                    theme === 'light'
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                  onClick={() => handleThemeChange('light')}
-                >
-                  <div className="w-20 h-12 mb-3 rounded-md bg-white border border-gray-200 shadow-sm flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full bg-gray-800"></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">Light</span>
-                </div>
-                <div
-                  className={`p-4 border rounded-lg flex flex-col items-center cursor-pointer transition-all ${
-                    theme === 'dark'
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                  onClick={() => handleThemeChange('dark')}
-                >
-                  <div className="w-20 h-12 mb-3 rounded-md bg-gray-800 border border-gray-700 shadow-sm flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full bg-white"></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">Dark</span>
-                </div>
-                <div
-                  className={`p-4 border rounded-lg flex flex-col items-center cursor-pointer transition-all ${
-                    theme === 'system'
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                  onClick={() => handleThemeChange('system')}
-                >
-                  <div className="w-20 h-12 mb-3 rounded-md bg-gradient-to-r from-white to-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full bg-gray-400"></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">System</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Editor Preferences</h2>
-              <div className="grid grid-cols-1 gap-6">
+          )}
+          
+          {activeTab === 'security' && (
+            <form onSubmit={handleSecuritySubmit}>
+              <div className="space-y-6">
                 <div>
-                  <label htmlFor="editorFontSize" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Font Size: {editorFontSize}px
+                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Current Password
                   </label>
                   <input
-                    type="range"
-                    min="10"
-                    max="24"
-                    value={editorFontSize}
-                    onChange={(e) => setEditorFontSize(parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    type="password"
+                    id="currentPassword"
+                    value={securityData.currentPassword}
+                    onChange={(e) => setSecurityData({...securityData, currentPassword: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
                   />
                 </div>
+                
                 <div>
-                  <label htmlFor="editorTabSize" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tab Size: {editorTabSize} spaces
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    New Password
                   </label>
-                  <select
-                    id="editorTabSize"
-                    value={editorTabSize}
-                    onChange={(e) => setEditorTabSize(parseInt(e.target.value))}
-                    className="form-input"
-                  >
-                    <option value="2">2 spaces</option>
-                    <option value="4">4 spaces</option>
-                    <option value="8">8 spaces</option>
-                  </select>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    value={securityData.newPassword}
+                    onChange={(e) => setSecurityData({...securityData, newPassword: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
+                  />
                 </div>
+                
                 <div>
-                  <div className="flex items-center">
-                    <input
-                      id="autoSave"
-                      type="checkbox"
-                      checked={autoSave}
-                      onChange={(e) => setAutoSave(e.target.checked)}
-                      className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:border-gray-600"
-                    />
-                    <label htmlFor="autoSave" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                      Auto-save code as you type
-                    </label>
-                  </div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={securityData.confirmPassword}
+                    onChange={(e) => setSecurityData({...securityData, confirmPassword: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
+                  />
                 </div>
+                
                 <div>
                   <button
-                    type="button"
-                    onClick={saveEditorPreferences}
-                    className="btn-primary"
+                    type="submit"
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-primary-700 dark:hover:bg-primary-600"
+                    disabled={loading}
                   >
-                    Save Editor Preferences
+                    {loading ? 'Updating...' : 'Update Password'}
                   </button>
                 </div>
               </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Notification Settings</h2>
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="emailNotifications"
-                      type="checkbox"
-                      checked={emailNotifications}
-                      onChange={(e) => setEmailNotifications(e.target.checked)}
-                      className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:border-gray-600"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label htmlFor="emailNotifications" className="font-medium text-gray-700 dark:text-gray-300">
-                      Email Notifications
-                    </label>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Receive email notifications about your account activity
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="resourceNotifications"
-                      type="checkbox"
-                      checked={resourceNotifications}
-                      onChange={(e) => setResourceNotifications(e.target.checked)}
-                      className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:border-gray-600"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label htmlFor="resourceNotifications" className="font-medium text-gray-700 dark:text-gray-300">
-                      New Resources
-                    </label>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Get notified when new learning resources are added
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="achievementNotifications"
-                      type="checkbox"
-                      checked={achievementNotifications}
-                      onChange={(e) => setAchievementNotifications(e.target.checked)}
-                      className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:border-gray-600"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label htmlFor="achievementNotifications" className="font-medium text-gray-700 dark:text-gray-300">
-                      Achievement Notifications
-                    </label>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Get notified when you earn badges or level up
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="pt-4">
-                  <button
-                    type="button"
-                    onClick={saveNotificationPreferences}
-                    className="btn-primary"
-                  >
-                    Save Notification Settings
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  if (loading && !userData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
+            </form>
+          )}
+        </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Manage your account settings and preferences
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="lg:col-span-1"
-        >
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex flex-col items-center pb-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="h-24 w-24 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-white text-4xl font-bold">
-                {userData?.name.charAt(0)}
-              </div>
-              <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">{userData?.name}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{userData?.email}</p>
-              <div className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400">
-                {userData?.role.charAt(0).toUpperCase() + userData?.role.slice(1)}
-              </div>
+      
+      {profile && (
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 dark:bg-gray-800">
+            <h2 className="text-lg font-semibold mb-4 dark:text-white">Course Progress</h2>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600 dark:text-gray-400">Enrolled Courses</span>
+              <span className="font-medium">{profile.enrolledCourses}</span>
             </div>
-            
-            <div className="pt-6 space-y-1">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeTab === 'profile'
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-              >
-                <UserIcon className="mr-2 h-5 w-5" />
-                Profile Information
-              </button>
-              <button
-                onClick={() => setActiveTab('security')}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeTab === 'security'
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-              >
-                <ShieldCheckIcon className="mr-2 h-5 w-5" />
-                Security & Password
-              </button>
-              <button
-                onClick={() => setActiveTab('preferences')}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeTab === 'preferences'
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-              >
-                <AdjustmentsHorizontalIcon className="mr-2 h-5 w-5" />
-                Preferences
-              </button>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600 dark:text-gray-400">Completed Courses</span>
+              <span className="font-medium">{profile.completedCourses}</span>
             </div>
-            
-            {/* Account Stats */}
-            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-                Account Stats
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Level</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {profileData?.dashboard_data.level || 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Points</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {profileData?.dashboard_data.points || 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Completed Resources</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {profileData?.dashboard_data.completed_resources || 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Badges</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {profileData?.dashboard_data.badges?.length || 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Account Verification Status */}
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className={`flex items-center ${
-                profileData?.verified 
-                  ? 'text-green-700 dark:text-green-400' 
-                  : 'text-yellow-700 dark:text-yellow-400'
-              }`}>
-                {profileData?.verified ? (
-                  <CheckCircleIcon className="h-5 w-5 mr-2" />
-                ) : (
-                  <XCircleIcon className="h-5 w-5 mr-2" />
-                )}
-                <span className="text-sm font-medium">
-                  {profileData?.verified ? 'Account Verified' : 'Account Not Verified'}
+            <div className="mt-4">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Progress</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {profile.completedCourses}/{profile.enrolledCourses}
                 </span>
               </div>
-              {!profileData?.verified && (
-                <button className="mt-2 text-xs text-primary-600 dark:text-primary-400 font-medium hover:underline">
-                  Verify your account
-                </button>
-              )}
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full dark:bg-blue-500" 
+                  style={{ width: `${(profile.completedCourses / Math.max(profile.enrolledCourses, 1)) * 100}%` }}
+                ></div>
+              </div>
             </div>
           </div>
-        </motion.div>
-
-        {/* Main Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="lg:col-span-3"
-        >
-          {renderTabContent()}
-        </motion.div>
-      </div>
-    </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6 dark:bg-gray-800">
+            <h2 className="text-lg font-semibold mb-4 dark:text-white">Achievements</h2>
+            {profile.achievements.length > 0 ? (
+              <div className="space-y-4">
+                {profile.achievements.map((achievement: any) => (
+                  <div key={achievement.id} className="flex items-start">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center dark:bg-green-900">
+                      <svg className="h-6 w-6 text-green-600 dark:text-green-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium dark:text-white">{achievement.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{achievement.description}</p>
+                      <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">Awarded: {achievement.dateAwarded}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">No achievements yet</p>
+            )}
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
   );
 };
 

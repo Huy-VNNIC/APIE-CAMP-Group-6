@@ -7,19 +7,18 @@ interface AlertProps {
 }
 
 const Alert: React.FC<AlertProps> = ({ type, message, onClose }) => {
-  // Xác định các class dựa trên type
   const getAlertClasses = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700';
+        return 'bg-green-50 text-green-800 border-green-200';
       case 'error':
-        return 'bg-red-50 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700';
+        return 'bg-red-50 text-red-800 border-red-200';
       case 'warning':
-        return 'bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700';
+        return 'bg-yellow-50 text-yellow-800 border-yellow-200';
       case 'info':
-        return 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700';
+        return 'bg-blue-50 text-blue-800 border-blue-200';
       default:
-        return 'bg-gray-50 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+        return 'bg-gray-50 text-gray-800 border-gray-200';
     }
   };
 
