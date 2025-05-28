@@ -12,7 +12,7 @@ const ResourceDetail = lazy(() => import('./pages/learning/ResourceDetail'));
 const Submissions = lazy(() => import('./pages/learning/Submissions'));
 const Profile = lazy(() => import('./pages/profile/Profile'));
 const Support = lazy(() => import('./pages/support/Support'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+const NotFound = lazy(() => import('./pages/errors/NotFound'));
 
 // Layouts
 const AuthLayout = lazy(() => import('./layouts/AuthLayout'));

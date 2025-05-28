@@ -1,86 +1,98 @@
-const resourceModel = require('../models/resourceModel');
+const db = require('../config/db');
 
-const resourceController = {
-  // Lấy tất cả resources
-  async getAllResources(req, res) {
+module.exports = {
+  // Lấy danh sách tài liệu học tập
+  getResources: async (req, res) => {
     try {
-      const resources = await resourceModel.getAllResources();
+      // Lấy tất cả resources và trạng thái học tập của học sinh
+      const resources = await db.query(
+        `SELECT lr.id, lr.title, lr.type, lr.language, lr.url, lr.created_at,
+         sr.status, sr.last_accessed
+         FROM learning_resources lr
+         LEFT JOIN student_resources sr ON lr.id = sr.resource_id AND sr.student_id = ?
+         ORDER BY lr.created_at DESC`,
+        [req.user.id]
+      );
       
-      // Format dữ liệu trả về
-      const formattedResources = resources.map(resource => ({
-        id: resource.id,
-        title: resource.title,
-        type: resource.type,
-        language: resource.language,
-        author: resource.created_by_name,
-        created_at: resource.created_at
-      }));
-      
-      res.json({
-        success: true,
-        data: formattedResources
-      });
-    } catch (err) {
-      console.error('Get resources error:', err);
-      res.status(500).json({
-        success: false,
-        msg: 'Server error'
-      });
-    }
-  },
-  
-  // Lấy chi tiết một resource
-  async getResourceById(req, res) {
-    try {
-      const resourceId = req.params.id;
-      const resource = await resourceModel.getResourceById(resourceId);
-      
-      if (!resource) {
-        return res.status(404).json({
-          success: false,
-          msg: 'Resource not found'
-        });
-      }
-      
-      res.json({
-        success: true,
-        data: {
-          id: resource.id,
-          title: resource.title,
-          type: resource.type,
-          language: resource.language,
-          url: resource.url,
-          author: resource.created_by_name,
-          created_at: resource.created_at
-        }
-      });
-    } catch (err) {
-      console.error('Get resource error:', err);
-      res.status(500).json({
-        success: false,
-        msg: 'Server error'
-      });
-    }
-  },
-  
-  // Lấy resources theo loại
-  async getResourcesByType(req, res) {
-    try {
-      const type = req.params.type;
-      const resources = await resourceModel.getResourcesByType(type);
-      
-      res.json({
+      // Trả về kết quả
+      return res.json({
         success: true,
         data: resources
       });
     } catch (err) {
-      console.error('Get resources by type error:', err);
-      res.status(500).json({
+      console.error('Get resources error:', err);
+      return res.status(500).json({
         success: false,
-        msg: 'Server error'
+        message: 'An error occurred while fetching resources',
+        error: err.message
+      });
+    }
+  },
+  
+  // Lấy chi tiết tài liệu học tập
+  getResourceDetail: async (req, res) => {
+    try {
+      const resourceId = req.params.id;
+      
+      // Lấy thông tin chi tiết của resource
+      const resources = await db.query(
+        `SELECT lr.*, u.name as created_by_name
+         FROM learning_resources lr
+         LEFT JOIN users u ON lr.created_by = u.id
+         WHERE lr.id = ?`,
+        [resourceId]
+      );
+      
+      if (resources.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Resource not found'
+        });
+      }
+      
+      const resource = resources[0];
+      
+      // Lấy trạng thái học tập của học sinh
+      const studyStatus = await db.query(
+        `SELECT sr.status, sr.last_accessed
+         FROM student_resources sr
+         WHERE sr.student_id = ? AND sr.resource_id = ?`,
+        [req.user.id, resourceId]
+      );
+      
+      // Cập nhật trạng thái viewed nếu chưa có bản ghi nào
+      if (studyStatus.length === 0) {
+        await db.query(
+          `INSERT INTO student_resources (student_id, resource_id, status, last_accessed)
+           VALUES (?, ?, 'viewed', NOW())`,
+          [req.user.id, resourceId]
+        );
+      } else {
+        // Cập nhật thời gian truy cập
+        await db.query(
+          `UPDATE student_resources
+           SET last_accessed = NOW()
+           WHERE student_id = ? AND resource_id = ?`,
+          [req.user.id, resourceId]
+        );
+      }
+      
+      // Thêm trạng thái học tập vào kết quả
+      resource.study_status = studyStatus.length > 0 ? studyStatus[0].status : 'viewed';
+      resource.last_accessed = studyStatus.length > 0 ? studyStatus[0].last_accessed : new Date();
+      
+      // Trả về kết quả
+      return res.json({
+        success: true,
+        data: resource
+      });
+    } catch (err) {
+      console.error('Get resource detail error:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'An error occurred while fetching resource detail',
+        error: err.message
       });
     }
   }
 };
-
-module.exports = resourceController;

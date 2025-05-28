@@ -1,35 +1,36 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
+const resourceController = require('../controllers/resourceController');
+const submissionController = require('../controllers/submissionController');
 const auth = require('../middleware/auth');
 const checkRole = require('../middleware/roleCheck');
 
-// Tất cả routes đều yêu cầu xác thực và role student
+// Áp dụng middleware xác thực và kiểm tra vai trò cho tất cả route
 router.use(auth);
 router.use(checkRole(['student']));
 
-// Lấy dashboard data
+// Dashboard
 router.get('/dashboard', studentController.getDashboard);
 
-// Cập nhật profile
-router.put('/profile', studentController.updateProfile);
-
-// Thêm route lấy profile
+// Quản lý profile
 router.get('/profile', studentController.getProfile);
-
-// Cập nhật preferences
+router.put('/profile', studentController.updateProfile);
 router.put('/preferences', studentController.updatePreferences);
 
-// Lấy tiến độ tổng quan
+// Tài nguyên học tập
+router.get('/resources', resourceController.getResources);
+router.get('/resources/:id', resourceController.getResourceDetail);
+router.post('/resources/progress', studentController.updateResourceProgress);
+
+// Submissions - Làm bài tập và bài kiểm tra
+router.post('/submissions', submissionController.createSubmission);
+router.get('/submissions/history/:resourceId', submissionController.getSubmissionHistory);
+router.get('/submissions/:id', submissionController.getSubmissionDetail);
+
+// Tiến độ học tập
 router.get('/progress', studentController.getProgress);
-
-// Cập nhật tiến độ cho resource
-router.post('/progress/resource', studentController.updateResourceProgress);
-
-// Lấy hoạt động gần đây
 router.get('/activities', studentController.getRecentActivities);
-
-// Lấy bài tập sắp đến hạn
-router.get('/assignments/upcoming', studentController.getUpcomingAssignments);
+router.get('/completed-resources', studentController.getCompletedResources);
 
 module.exports = router;

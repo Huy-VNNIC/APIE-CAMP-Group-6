@@ -23,6 +23,10 @@
     "nodemon": "^3.1.10"
   },
   "dependencies": {
+    "@codemirror/basic-setup": "^0.20.0",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/view": "^6.36.8",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
@@ -36,8 +40,11 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "monaco-editor": "^0.52.2",
     "morgan": "^1.10.0",
     "mysql2": "^3.14.1",
+    "react-codemirror6": "^1.1.0",
+    "react-monaco-editor": "^0.58.0",
     "sequelize": "^6.37.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",

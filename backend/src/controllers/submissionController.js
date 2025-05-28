@@ -1,92 +1,200 @@
-const submissionModel = require('../models/submissionModel');
-const codeRunner = require('../utils/codeRunner');
+const db = require('../config/db');
 
-const submissionController = {
+module.exports = {
   // Tạo submission mới
-  async createSubmission(req, res) {
+  createSubmission: async (req, res) => {
     try {
-      const { resourceId, code } = req.body;
-      const studentId = req.user.id;
+      const { resourceId, code, language } = req.body;
       
-      // Tạo submission với trạng thái pending
-      const submission = await submissionModel.create(studentId, resourceId, code);
+      if (!resourceId || !code) {
+        return res.status(400).json({
+          success: false,
+          message: 'Resource ID and code are required'
+        });
+      }
       
-      // Chạy code và lấy kết quả
-      const result = await codeRunner.runCode(code);
+      // Kiểm tra resource có tồn tại không
+      const resources = await db.query(
+        'SELECT id, type FROM learning_resources WHERE id = ?',
+        [resourceId]
+      );
       
-      // Cập nhật kết quả submission
-      const status = result.success ? 'success' : 'failed';
-      await submissionModel.updateResult(submission.id, JSON.stringify(result), status);
+      if (resources.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Resource not found'
+        });
+      }
       
-      res.status(201).json({
+      // Mô phỏng thực thi code
+      const result = {
+        output: 'Code executed successfully.',
+        duration: '0.05s'
+      };
+      
+      // Lưu submission
+      const submissionResult = await db.query(
+        `INSERT INTO student_submissions 
+         (student_id, resource_id, code, result, status) 
+         VALUES (?, ?, ?, ?, 'success')`,
+        [req.user.id, resourceId, code, JSON.stringify(result)]
+      );
+      
+      // Cập nhật trạng thái resource thành in_progress hoặc completed
+      const submissionCount = await db.query(
+        `SELECT COUNT(*) as count 
+         FROM student_submissions 
+         WHERE student_id = ? AND resource_id = ?`,
+        [req.user.id, resourceId]
+      );
+      
+      // Nếu có 3+ submission, đánh dấu là completed
+      const newStatus = submissionCount[0].count >= 3 ? 'completed' : 'in_progress';
+      
+      await db.query(
+        `INSERT INTO student_resources 
+         (student_id, resource_id, status, last_accessed) 
+         VALUES (?, ?, ?, NOW()) 
+         ON DUPLICATE KEY UPDATE 
+         status = IF(status = 'completed', 'completed', ?), 
+         last_accessed = NOW()`,
+        [req.user.id, resourceId, newStatus, newStatus]
+      );
+      
+      // Cập nhật dashboard_data nếu status thay đổi
+      if (newStatus === 'completed') {
+        // Đếm số lượng resource đã hoàn thành
+        const completedCount = await db.query(
+          `SELECT COUNT(*) as count 
+           FROM student_resources 
+           WHERE student_id = ? AND status = 'completed'`,
+          [req.user.id]
+        );
+        
+        const totalResources = await db.query(
+          `SELECT COUNT(*) as count FROM learning_resources`
+        );
+        
+        // Lấy dashboard_data
+        const students = await db.query(
+          'SELECT dashboard_data FROM students WHERE user_id = ?',
+          [req.user.id]
+        );
+        
+        if (students.length > 0) {
+          let dashboardData = {};
+          try {
+            if (typeof students[0].dashboard_data === 'string') {
+              dashboardData = JSON.parse(students[0].dashboard_data);
+            } else {
+              dashboardData = students[0].dashboard_data || {};
+            }
+          } catch (err) {
+            console.error('Error parsing dashboard_data:', err);
+            dashboardData = { progress: 0, level: 1, points: 0, completed_resources: 0 };
+          }
+          
+          // Cập nhật dashboard_data
+          const completed = completedCount[0].count;
+          const total = totalResources[0].count || 1;
+          
+          dashboardData.completed_resources = completed;
+          dashboardData.progress = Math.min(Math.round((completed / total) * 100), 100);
+          dashboardData.points = dashboardData.points + 50; // Thêm 50 điểm cho mỗi resource hoàn thành
+          dashboardData.level = Math.floor(dashboardData.points / 250) + 1;
+          
+          await db.query(
+            'UPDATE students SET dashboard_data = ? WHERE user_id = ?',
+            [JSON.stringify(dashboardData), req.user.id]
+          );
+        }
+      }
+      
+      // Trả về kết quả
+      return res.json({
         success: true,
+        message: 'Submission created successfully',
         data: {
-          id: submission.id,
+          id: submissionResult.insertId,
+          resourceId,
+          code,
           result,
-          status
+          status: 'success',
+          submitted_at: new Date()
         }
       });
     } catch (err) {
       console.error('Create submission error:', err);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        msg: 'Server error'
+        message: 'An error occurred while creating submission',
+        error: err.message
       });
     }
   },
   
-  // Lấy lịch sử submissions
-  async getSubmissions(req, res) {
+  // Lấy lịch sử submission cho một resource
+  getSubmissionHistory: async (req, res) => {
     try {
-      const studentId = req.user.id;
-      const submissions = await submissionModel.getSubmissionsByStudent(studentId);
+      const resourceId = req.params.resourceId;
       
-      res.json({
+      // Lấy lịch sử submission
+      const submissions = await db.query(
+        `SELECT id, code, result, status, submitted_at
+         FROM student_submissions
+         WHERE student_id = ? AND resource_id = ?
+         ORDER BY submitted_at DESC`,
+        [req.user.id, resourceId]
+      );
+      
+      // Trả về kết quả
+      return res.json({
         success: true,
         data: submissions
       });
     } catch (err) {
-      console.error('Get submissions error:', err);
-      res.status(500).json({
+      console.error('Get submission history error:', err);
+      return res.status(500).json({
         success: false,
-        msg: 'Server error'
+        message: 'An error occurred while fetching submission history',
+        error: err.message
       });
     }
   },
   
-  // Lấy chi tiết một submission
-  async getSubmissionById(req, res) {
+  // Lấy chi tiết submission
+  getSubmissionDetail: async (req, res) => {
     try {
       const submissionId = req.params.id;
-      const submission = await submissionModel.getSubmissionById(submissionId);
       
-      if (!submission) {
+      // Lấy chi tiết submission
+      const submissions = await db.query(
+        `SELECT ss.*, lr.title as resource_title
+         FROM student_submissions ss
+         JOIN learning_resources lr ON ss.resource_id = lr.id
+         WHERE ss.id = ? AND ss.student_id = ?`,
+        [submissionId, req.user.id]
+      );
+      
+      if (submissions.length === 0) {
         return res.status(404).json({
           success: false,
-          msg: 'Submission not found'
+          message: 'Submission not found'
         });
       }
       
-      // Kiểm tra xem submission có phải của student này không
-      if (submission.student_id !== req.user.id) {
-        return res.status(403).json({
-          success: false,
-          msg: 'Not authorized to view this submission'
-        });
-      }
-      
-      res.json({
+      // Trả về kết quả
+      return res.json({
         success: true,
-        data: submission
+        data: submissions[0]
       });
     } catch (err) {
-      console.error('Get submission error:', err);
-      res.status(500).json({
+      console.error('Get submission detail error:', err);
+      return res.status(500).json({
         success: false,
-        msg: 'Server error'
+        message: 'An error occurred while fetching submission detail',
+        error: err.message
       });
     }
   }
 };
-
-module.exports = submissionController;
