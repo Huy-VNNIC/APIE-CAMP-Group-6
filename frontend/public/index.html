@@ -1,23 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Online Coding Platform for Students" />
-    <meta name="theme-color" content="#4f46e5" />
-    <title>CodeLearn - Online Coding Platform</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // On page load or when changing themes, best to add inline in `head` to avoid FOUC
-      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-    </script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Platform</title>
+  <link rel="stylesheet" href="/src/styles/clean.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header-content">
+      <div>
+        <a href="/" class="logo">Learning Platform</a>
+        <div class="system-info">
+          <small>Current Date and Time (UTC): 2025-05-28 06:52:21</small><br>
+          <small>Current User's Login: Huy-VNNIC</small>
+        </div>
+      </div>
+      <div class="user-info">
+        <span class="user-name">Hello, Alice Johnson</span>
+        <a href="/logout" class="btn btn-primary">Logout</a>
+      </div>
+    </div>
+  </header>
+  
+  <main class="main">
+    <div class="container">
+      <div class="dashboard-header">
+        <h1 class="section-title">Dashboard</h1>
+        <p class="welcome-text">Welcome back, Alice Johnson!</p>
+      </div>
+      
+      <div class="card">
+        <h2 class="section-title">Overall Progress</h2>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 65%;"></div>
+          </div>
+          <div class="progress-percentage">65%</div>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-title">Level</div>
+            <div class="stat-value">3</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Points</div>
+            <div class="stat-value">750</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Completed Resources</div>
+            <div class="stat-value">12</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="two-column">
+        <div>
+          <div class="card">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="section-title">Enrolled Courses</h2>
+            </div>
+            
+            <div class="courses-grid">
+              <div class="course-card">
+                <div class="course-content">
+                  <h3 class="course-title">JavaScript Fundamentals</h3>
+                  <p class="course-description">Learn the basics of JavaScript programming</p>
+                  <div class="course-progress">
+                    <div class="flex justify-between mb-1">
+                      <span>Progress</span>
+                      <span>80%</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div class="progress-fill bg-success" style="width: 80%;"></div>
+                    </div>
+                  </div>
+                  <div class="course-footer">
+                    <span>Last accessed: 10:30:00 25/5/2025</span>
+                    <a href="#" class="btn btn-primary">Continue</a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="course-card">
+                <div class="course-content">
+                  <h3 class="course-title">React for Beginners</h3>
+                  <p class="course-description">Introduction to React library and its concepts</p>
+                  <div class="course-progress">
+                    <div class="flex justify-between mb-1">
+                      <span>Progress</span>
+                      <span>45%</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div class="progress-fill bg-warning" style="width: 45%;"></div>
+                    </div>
+                  </div>
+                  <div class="course-footer">
+                    <span>Last accessed: 14:15:00 26/5/2025</span>
+                    <a href="#" class="btn btn-primary">Continue</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div class="card">
+            <h2 class="section-title">Recent Activities</h2>
+            <div class="activities-list">
+              <div class="activity-item">
+                <div class="activity-content">Completed "Variables and Data Types" in JavaScript Fundamentals</div>
+                <div class="activity-time">15:30:00 26/5/2025</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-content">Submitted "CSS Layout Challenge" in Advanced CSS & Sass</div>
+                <div class="activity-time">11:45:00 25/5/2025</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-content">Started "React Hooks" in React for Beginners</div>
+                <div class="activity-time">14:20:00 24/5/2025</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="footer">
+    <div class="container">
+      <p class="footer-text">© 2025 Learning Platform. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
 </html>

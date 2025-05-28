@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary-50: #eef9ff;
+  --color-primary-100: #dcf2ff;
+  --color-primary-200: #b9eaff;
+  --color-primary-300: #84daff;
+  --color-primary-400: #47c2ff;
+  --color-primary-500: #1ea6ff;
+  --color-primary-600: #0984e3;
+  --color-primary-700: #0069bd;
+  --color-primary-800: #00569a;
+  --color-primary-900: #064880;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Dashboard Cards */
+.stats-card {
+  @apply relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300;
+  background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 80%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stats-card:hover::before {
+  opacity: 1;
+}
+
+.level-card {
+  --bg-start: #4299e1;
+  --bg-end: #3182ce;
+}
+
+.points-card {
+  --bg-start: #48bb78;
+  --bg-end: #38a169;
+}
+
+.resources-card {
+  --bg-start: #9f7aea;
+  --bg-end: #805ad5;
+}
+
+/* Course Cards */
+.course-card {
+  @apply bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 transition-all duration-300;
+}
+
+.course-card:hover {
+  @apply shadow-lg border-primary-300;
+  transform: translateY(-3px);
+}
+
+/* Progress Bars */
+.progress-bar {
+  @apply h-2 rounded-full bg-gray-200 overflow-hidden;
+  transition: width 1s ease-in-out;
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full;
+  background: linear-gradient(to right, #0984e3, #00cec9);
+  transition: width 1s ease;
+}
+
+/* Dashboard Sections */
+.dashboard-section {
+  @apply bg-white rounded-xl shadow-md overflow-hidden p-6 mb-6;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Activity Items */
+.activity-item {
+  @apply py-4 flex items-start space-x-4 border-b border-gray-100 transition-all duration-200;
+}
+
+.activity-item:hover {
+  @apply bg-gray-50;
+}
+
+.activity-icon {
+  @apply flex-shrink-0 rounded-full p-2;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply px-4 py-2 bg-primary-600 text-white rounded-lg font-medium shadow-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-all duration-200;
+}
+
+/* Header & Footer */
+.app-header {
+  @apply bg-white shadow-sm sticky top-0 z-10;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.app-footer {
+  @apply bg-white py-6 border-t border-gray-200 text-center text-sm text-gray-600;
+}
+
+/* Nav Menu */
+.nav-link {
+  @apply px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200;
+}
+
+.nav-link.active {
+  @apply bg-primary-50 text-primary-800;
+}
+
+/* Dark Mode Styles */
+.dark .stats-card {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .course-card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark .course-card:hover {
+  @apply border-primary-600;
+}
+
+.dark .dashboard-section {
+  @apply bg-gray-800 border border-gray-700;
+}
+
+.dark .activity-item {
+  @apply border-gray-700;
+}
+
+.dark .activity-item:hover {
+  @apply bg-gray-700;
+}
+
+.dark .app-header {
+  background: rgba(31, 41, 55, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.dark .app-footer {
+  @apply bg-gray-800 border-gray-700 text-gray-400;
+}
+
+.dark .nav-link {
+  @apply text-gray-300 hover:bg-gray-700 hover:text-white;
+}
+
+.dark .nav-link.active {
+  @apply bg-gray-900 text-white;
+}
+
+.dark .progress-bar {
+  @apply bg-gray-700;
+}
+
+.dark .btn-secondary {
+  @apply bg-gray-700 text-gray-200 hover:bg-gray-600;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    @apply grid-cols-1;
+  }
+}

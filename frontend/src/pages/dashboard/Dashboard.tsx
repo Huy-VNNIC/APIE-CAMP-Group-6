@@ -1,160 +1,194 @@
 import React, { useEffect, useState } from 'react';
-import useAuth from '../../hooks/useAuth';
 import studentApi from '../../api/student';
-import DashboardLayout from '../../layouts/DashboardLayout';
-import StatCard from '../../components/dashboard/StatCard';
-import ActivityFeed from '../../components/dashboard/ActivityFeed';
-import ProgressChart from '../../components/dashboard/ProgressChart';
-import EnrolledCoursesList from '../../components/dashboard/EnrolledCoursesList';
-import Loader from '../../components/common/Loader';
-import Alert from '../../components/common/Alert';
+import useAuth from '../../hooks/useAuth';
+
+interface DashboardData {
+  dashboardData: {
+    progress: number;
+    level: number;
+    points: number;
+    completed_resources: number;
+  };
+  enrolledCourses: Array<{
+    id: number;
+    title: string;
+    description: string;
+    progress: number;
+    last_accessed: string;
+  }>;
+  recentActivities: Array<{
+    id: number;
+    type: string;
+    description: string;
+    timestamp: string;
+  }>;
+}
 
 const Dashboard: React.FC = () => {
-  const { user, currentDate } = useAuth();
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchDashboard = async () => {
       try {
+        setLoading(true);
         const response = await studentApi.getDashboard();
-        
         if (response.success) {
           setDashboardData(response.data);
         } else {
-          setError('Failed to load dashboard data');
+          setError(response.message || 'Error fetching dashboard data');
         }
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('An error occurred while loading your dashboard');
+      } catch (err: any) {
+        console.error('Dashboard fetch error:', err);
+        setError(err.message || 'An unknown error occurred');
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchDashboardData();
+
+    fetchDashboard();
   }, []);
-  
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-64">
-          <Loader />
+      <div className="container">
+        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="loader"></div>
+          <p>Loading your dashboard...</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
-  
+
   if (error) {
     return (
-      <DashboardLayout>
-        <Alert type="error" message={error} />
-      </DashboardLayout>
+      <div className="container">
+        <div className="card" style={{ borderLeft: '4px solid var(--danger)', padding: '1rem' }}>
+          <h2 style={{ color: 'var(--danger)' }}>Error</h2>
+          <p>{error}</p>
+        </div>
+      </div>
     );
   }
-  
+
   if (!dashboardData) {
     return (
-      <DashboardLayout>
-        <Alert type="error" message="No dashboard data available" />
-      </DashboardLayout>
+      <div className="container">
+        <div className="card">
+          <p>No dashboard data available</p>
+        </div>
+      </div>
     );
   }
-  
-  const { dashboardData: stats, enrolledCourses, recentActivities, upcomingAssignments } = dashboardData;
-  
+
+  const { dashboardData: progress, enrolledCourses, recentActivities } = dashboardData;
+
   return (
-    <DashboardLayout>
-      {/* Welcome Section */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-              Welcome back, {user?.name || 'Student'}!
-            </h1>
-            <div className="text-sm text-gray-600 mt-1 dark:text-gray-400">
-              <p>Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): {currentDate}</p>
-              <p>Current User's Login: {user?.login || 'Huy-VNNIC'}</p>
-            </div>
-          </div>
-        </div>
+    <div className="container">
+      <div className="dashboard-header">
+        <h1 className="section-title">Dashboard</h1>
+        <p className="welcome-text">Welcome back, {user?.name || 'Student'}!</p>
       </div>
       
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Overall Progress"
-          value={`${stats?.progress || 0}%`}
-          icon="chart"
-          trend={+5}
-          description="Your learning progress"
-        />
-        <StatCard
-          title="Current Level"
-          value={stats?.level || 1}
-          icon="level"
-          description="Keep learning to level up"
-        />
-        <StatCard
-          title="Points"
-          value={stats?.points || 0}
-          icon="points"
-          trend={+120}
-          description="Points earned from activities"
-        />
-        <StatCard
-          title="Resources Completed"
-          value={stats?.completed_resources || 0}
-          icon="book"
-          trend={+2}
-          description="Tutorials and exercises"
-        />
-      </div>
-      
-      {/* Learning Progress & Upcoming Assignments */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-            <h2 className="text-lg font-semibold mb-4 dark:text-white">Learning Progress</h2>
-            <ProgressChart 
-              courses={enrolledCourses || []} 
-            />
+      <div className="card">
+        <h2 className="section-title">Overall Progress</h2>
+        <div className="progress-container">
+          <div className="progress-bar">
+            <div 
+              className="progress-fill" 
+              style={{ width: `${progress?.progress || 0}%` }}
+            ></div>
           </div>
+          <div className="progress-percentage">{progress?.progress || 0}%</div>
         </div>
         
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-title">Level</div>
+            <div className="stat-value">{progress?.level || 1}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-title">Points</div>
+            <div className="stat-value">{progress?.points || 0}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-title">Completed Resources</div>
+            <div className="stat-value">{progress?.completed_resources || 0}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="two-column">
         <div>
-          <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-            <h2 className="text-lg font-semibold mb-4 dark:text-white">Upcoming Assignments</h2>
-            <div>
-              {upcomingAssignments && 
-               upcomingAssignments.length > 0 ? (
-                upcomingAssignments.map((assignment: any) => (
-                  <div key={assignment.id} className="mb-3 pb-3 border-b dark:border-gray-700">
-                    <h3 className="font-medium dark:text-white">{assignment.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Due: {assignment.due_date}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">{assignment.course_title}</p>
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 className="section-title">Enrolled Courses</h2>
+            </div>
+            
+            {enrolledCourses && enrolledCourses.length > 0 ? (
+              <div className="courses-grid">
+                {enrolledCourses.map(course => (
+                  <div className="course-card" key={course.id}>
+                    <div className="course-content">
+                      <h3 className="course-title">{course.title}</h3>
+                      <p className="course-description">{course.description}</p>
+                      <div className="course-progress">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span>Progress</span>
+                          <span>{course.progress}%</span>
+                        </div>
+                        <div className="progress-bar">
+                          <div 
+                            className={`progress-fill ${
+                              course.progress >= 70 ? 'bg-success' : 
+                              course.progress >= 40 ? 'bg-warning' : 
+                              'bg-primary'
+                            }`}
+                            style={{ width: `${course.progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="course-footer">
+                        <span>Last accessed: {formatDate(course.last_accessed)}</span>
+                        <button className="btn btn-primary">Continue</button>
+                      </div>
+                    </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400">No upcoming assignments</p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p>No courses enrolled yet.</p>
+            )}
           </div>
-        </div>
-      </div>
-      
-      {/* Enrolled Courses & Activity Feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <EnrolledCoursesList courses={enrolledCourses || []} />
         </div>
         
         <div>
-          <ActivityFeed activities={recentActivities || []} />
+          <div className="card">
+            <h2 className="section-title">Recent Activities</h2>
+            
+            {recentActivities && recentActivities.length > 0 ? (
+              <div className="activities-list">
+                {recentActivities.map(activity => (
+                  <div className="activity-item" key={activity.id}>
+                    <div className="activity-content">{activity.description}</div>
+                    <div className="activity-time">{formatDate(activity.timestamp)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No recent activities.</p>
+            )}
+          </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 
