@@ -1,120 +1,153 @@
-const Enrollment = require('../models/enrollmentModel');
-const Course = require('../models/courseModel');
+// Mock data cho enrollments
+const enrollments = [];
 
-exports.enrollCourse = async (req, res) => {
+// @desc    Tạo enrollment mới
+// @route   POST /api/enrollments
+// @access  Private
+exports.createEnrollment = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const studentId = req.user.id;
+    const { courseId, userId } = req.body;
     
-    // Kiểm tra khóa học tồn tại
-    const course = await Course.getCourseById(courseId);
-    if (!course) {
-      return res.status(404).json({ message: 'Không tìm thấy khóa học' });
+    // Kiểm tra thông tin
+    if (!courseId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ thông tin'
+      });
     }
     
-    // Kiểm tra student đã đăng ký khóa học này chưa
-    const isAlreadyEnrolled = await Enrollment.isEnrolled(studentId, courseId);
-    if (isAlreadyEnrolled) {
-      return res.status(400).json({ message: 'Bạn đã đăng ký khóa học này rồi' });
-    }
+    // Tạo enrollment mới
+    const newEnrollment = {
+      id: String(enrollments.length + 1),
+      courseId,
+      userId,
+      enrolledAt: new Date().toISOString(),
+      status: 'active',
+      progress: 0
+    };
     
-    // Đăng ký khóa học
-    const enrollment = await Enrollment.enroll(studentId, courseId);
+    // Thêm vào danh sách
+    enrollments.push(newEnrollment);
     
     res.status(201).json({
-      message: 'Đăng ký khóa học thành công',
-      enrollment
+      success: true,
+      data: newEnrollment
     });
   } catch (error) {
-    console.error('Enrollment error:', error);
-    res.status(500).json({ message: 'Lỗi server khi đăng ký khóa học', error: error.message });
+    console.error('Create enrollment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 };
 
-exports.getMyEnrollments = async (req, res) => {
+// @desc    Lấy tất cả enrollments
+// @route   GET /api/enrollments
+// @access  Private
+exports.getEnrollments = async (req, res) => {
   try {
-    const studentId = req.user.id;
-    const enrollments = await Enrollment.getEnrollmentsByStudent(studentId);
-    
-    res.status(200).json({
-      enrollments
+    res.json({
+      success: true,
+      count: enrollments.length,
+      data: enrollments
     });
   } catch (error) {
     console.error('Get enrollments error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
-  }
-};
-
-exports.getMyCoursesWithDetails = async (req, res) => {
-  try {
-    const studentId = req.user.id;
-    const courses = await Course.getCoursesForStudent(studentId);
-    
-    res.status(200).json({
-      courses
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
-  } catch (error) {
-    console.error('Get courses error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
 
-exports.getAvailableCourses = async (req, res) => {
+// @desc    Lấy enrollment theo ID
+// @route   GET /api/enrollments/:id
+// @access  Private
+exports.getEnrollment = async (req, res) => {
   try {
-    const studentId = req.user.id;
-    const availableCourses = await Course.getAvailableCoursesForStudent(studentId);
-    
-    res.status(200).json({
-      availableCourses
-    });
-  } catch (error) {
-    console.error('Get available courses error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
-  }
-};
-
-exports.updateEnrollmentStatus = async (req, res) => {
-  try {
-    const { enrollmentId } = req.params;
-    const { completed } = req.body;
-    const studentId = req.user.id;
-    
-    if (completed === undefined) {
-      return res.status(400).json({ message: 'Cần cung cấp trạng thái completed' });
-    }
-    
-    const enrollment = await Enrollment.updateCompletionStatus(enrollmentId, studentId, completed);
+    const enrollment = enrollments.find(e => e.id === req.params.id);
     
     if (!enrollment) {
-      return res.status(404).json({ message: 'Không tìm thấy thông tin đăng ký' });
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy enrollment'
+      });
     }
     
-    res.status(200).json({
-      message: 'Cập nhật trạng thái thành công',
-      enrollment
+    res.json({
+      success: true,
+      data: enrollment
+    });
+  } catch (error) {
+    console.error('Get enrollment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// @desc    Cập nhật enrollment
+// @route   PUT /api/enrollments/:id
+// @access  Private
+exports.updateEnrollment = async (req, res) => {
+  try {
+    const enrollmentIndex = enrollments.findIndex(e => e.id === req.params.id);
+    
+    if (enrollmentIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy enrollment'
+      });
+    }
+    
+    const updatedEnrollment = {
+      ...enrollments[enrollmentIndex],
+      ...req.body,
+      id: req.params.id // Đảm bảo ID không thay đổi
+    };
+    
+    enrollments[enrollmentIndex] = updatedEnrollment;
+    
+    res.json({
+      success: true,
+      data: updatedEnrollment
     });
   } catch (error) {
     console.error('Update enrollment error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 };
 
-exports.unenrollCourse = async (req, res) => {
+// @desc    Xóa enrollment
+// @route   DELETE /api/enrollments/:id
+// @access  Private
+exports.deleteEnrollment = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const studentId = req.user.id;
+    const enrollmentIndex = enrollments.findIndex(e => e.id === req.params.id);
     
-    const enrollment = await Enrollment.unenroll(studentId, courseId);
-    
-    if (!enrollment) {
-      return res.status(404).json({ message: 'Bạn chưa đăng ký khóa học này' });
+    if (enrollmentIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy enrollment'
+      });
     }
     
-    res.status(200).json({
-      message: 'Hủy đăng ký khóa học thành công'
+    enrollments.splice(enrollmentIndex, 1);
+    
+    res.json({
+      success: true,
+      data: {}
     });
   } catch (error) {
-    console.error('Unenroll error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    console.error('Delete enrollment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 };

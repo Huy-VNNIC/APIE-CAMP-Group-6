@@ -1,25 +1,23 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+const mongoose = require('mongoose');
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-  ssl: false
-});
-
-// Kiểm tra kết nối
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('Database connection error:', err.stack);
-  } else {
-    console.log('Connected to database at:', res.rows[0].now);
+const connectDB = async () => {
+  try {
+    // Sử dụng URI từ biến môi trường hoặc URI mặc định
+    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/coding-platform';
+    
+    // Kiểm tra nếu không sử dụng MongoDB, có thể bỏ qua kết nối
+    if (process.env.SKIP_DB_CONNECTION === 'true') {
+      console.log('Skipping database connection as per configuration');
+      return;
+    }
+    
+    const conn = await mongoose.connect(mongoURI);
+    
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    console.log('Database connection failed. Continuing without database...');
   }
-});
-
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-  pool
 };
+
+module.exports = connectDB;

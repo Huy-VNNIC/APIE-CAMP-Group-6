@@ -1,0 +1,91 @@
+{
+  "app_name": "Platform Coding Online",
+  "navigation": {
+    "courses": "Kursus",
+    "playground": "Playground Kode",
+    "login": "Masuk",
+    "register": "Daftar",
+    "profile": "Profil",
+    "logout": "Keluar"
+  },
+  "dashboard": {
+    "welcome": "Selamat datang di Platform Coding Online",
+    "intro": "Dari sini Anda dapat mengelola kursus, mengerjakan tugas, dan mengakses playground kode.",
+    "my_courses": "Kursus Saya",
+    "no_courses": "Anda belum mendaftar di kursus apa pun. Jelajahi kursus yang tersedia.",
+    "recent_activity": "Aktivitas Terbaru",
+    "no_activity": "Tidak ada aktivitas terbaru.",
+    "learning_progress": "Kemajuan Belajar",
+    "no_progress": "Anda belum memiliki kemajuan belajar."
+  },
+  "courses": {
+    "title": "Daftar Kursus",
+    "description": "Jelajahi kursus pemrograman yang tersedia di platform.",
+    "view_details": "Lihat Detail",
+    "course_detail": "Detail Kursus",
+    "enroll": "Daftar",
+    "course_content": "Konten Kursus"
+  },
+  "profile": {
+    "title": "Profil Pribadi",
+    "edit": "Edit",
+    "personal_info": "Informasi Pribadi",
+    "username": "Nama Pengguna",
+    "email": "Email",
+    "full_name": "Nama Lengkap",
+    "role": "Peran",
+    "student": "Siswa",
+    "instructor": "Instruktur",
+    "not_updated": "Belum diperbarui"
+  },
+  "code_playground": {
+    "title": "Playground Kode",
+    "description": "Ini adalah ruang untuk Anda bereksperimen dengan kode dalam berbagai bahasa. Tulis kode, jalankan, dan lihat hasilnya secara langsung.",
+    "language": "Bahasa",
+    "editor": "Editor Kode",
+    "results": "Hasil",
+    "previous_submissions": "Pengiriman Sebelumnya",
+    "run_code": "Jalankan Kode",
+    "submit": "Kirim",
+    "rerun_code": "Jalankan Ulang Kode",
+    "extend_time": "Perpanjang Waktu",
+    "time_left": "Waktu tersisa",
+    "no_results": "Belum ada hasil. Jalankan kode terlebih dahulu.",
+    "submission": "Pengiriman"
+  },
+  "auth": {
+    "login_title": "Masuk",
+    "register_title": "Daftar Akun",
+    "username": "Nama Pengguna",
+    "password": "Kata Sandi",
+    "confirm_password": "Konfirmasi Kata Sandi",
+    "email": "Email",
+    "full_name": "Nama Lengkap",
+    "role": "Peran",
+    "student": "Siswa",
+    "instructor": "Instruktur",
+    "no_account": "Belum punya akun?",
+    "sign_up": "Daftar sekarang",
+    "have_account": "Sudah punya akun?",
+    "sign_in": "Masuk",
+    "passwords_not_match": "Kata sandi tidak cocok"
+  },
+  "languages": {
+    "en": "Bahasa Inggris",
+    "id": "Bahasa Indonesia",
+    "bn": "Bahasa Bengali"
+  },
+  "status": {
+    "graded": "Dinilai",
+    "error": "Error",
+    "pending": "Tertunda"
+  },
+  "messages": {
+    "code_run_success": "Kode berhasil dijalankan!",
+    "code_run_error": "Error saat menjalankan kode!",
+    "submission_success": "Pengiriman berhasil!",
+    "submission_error": "Error saat mengirim kode!",
+    "container_extended": "Waktu container diperpanjang!",
+    "container_extend_error": "Tidak dapat memperpanjang waktu container!"
+  }
+}

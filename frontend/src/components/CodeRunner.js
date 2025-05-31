@@ -1,13 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { Button, Tabs, Tab, Box, Typography, Paper, TextField, MenuItem, CircularProgress } from '@mui/material';
-import CodeEditor from './CodeEditor'; // Giả sử bạn có component CodeEditor
+import {
+  Box,
+  Button,
+  Paper,
+  Typography,
+  Tabs,
+  Tab,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  Snackbar,
+} from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import SaveIcon from '@mui/icons-material/Save';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CodeEditor from './CodeEditor';
+import { UserContext } from '../contexts/UserContext';
 
 const languageOptions = [
   { value: 'javascript', label: 'JavaScript' },
   { value: 'html', label: 'HTML' },
+  { value: 'css', label: 'CSS' },
   { value: 'python', label: 'Python' },
-  { value: 'php', label: 'PHP' }
+  { value: 'java', label: 'Java' },
+  { value: 'php', label: 'PHP' },
+  { value: 'go', label: 'Go' },
+  { value: 'ruby', label: 'Ruby' },
 ];
 
 const templates = {
@@ -61,25 +84,82 @@ if __name__ == "__main__":
 // PHP Code Template
 echo "<h1>Hello from PHP!</h1>";
 echo "<p>Today is " . date("Y-m-d") . "</p>";
+`,
+  
+  java: `// Java Code Template
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from Java!");
+    }
+}`,
+
+  ruby: `# Ruby Code Template
+puts "Hello from Ruby!"
+
+def hello(name)
+  "Hello, #{name}!"
+end
+
+puts hello("World")`,
+
+  go: `// Go Code Template
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    fmt.Println("Hello from Go!")
+}`,
+
+  css: `/* CSS Code Template */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+h1 {
+  color: #2196f3;
+  text-align: center;
+}
+
+p {
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 `
 };
 
 const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null }) => {
+  const { token } = useContext(UserContext);
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
+  const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
   const [previousSubmissions, setPreviousSubmissions] = useState([]);
-  
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
   useEffect(() => {
     // Nếu có submissionId, lấy thông tin submission
     if (submissionId) {
       fetchSubmission();
     } else {
       // Nếu không, đặt code template dựa vào ngôn ngữ
-      setCode(templates[language]);
+      setCode(templates[language] || '');
     }
     
     // Nếu có resourceId và courseId, lấy các submission trước đó
@@ -92,7 +172,7 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
     try {
       setLoading(true);
       const response = await axios.get(`/api/code/submissions/${submissionId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       setCode(response.data.submission.code_text);
@@ -116,12 +196,14 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
   const fetchPreviousSubmissions = async () => {
     try {
       const response = await axios.get(`/api/code/my-submissions?resourceId=${resourceId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       
-      setPreviousSubmissions(response.data.submissions.filter(sub => 
+      const filteredSubmissions = response.data.submissions.filter(sub => 
         sub.resource_id == resourceId && sub.course_id == courseId
-      ));
+      );
+      
+      setPreviousSubmissions(filteredSubmissions);
     } catch (err) {
       console.error('Error fetching previous submissions:', err);
     }
@@ -132,24 +214,39 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
       setLoading(true);
       setError(null);
       
-      const response = await axios.post('/api/code/run', {
-        codeText: code,
-        language
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      // Thay đổi endpoint từ /api/code/run thành /api/test/run-code
+      const response = await axios.post('/api/test/run-code', {
+        code: code,
+        language: language
       });
       
+      console.log("Response:", response.data);
+      
       setResult({
-        url: response.data.url,
-        containerId: response.data.containerId,
-        expiresAt: response.data.expiresAt
+        status: 'success',
+        url: response.data.containerInfo.url,
+        containerId: response.data.containerInfo.id,
+        expiresAt: response.data.containerInfo.expiresAt
       });
       
       setActiveTab(1); // Switch to Result tab
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Code đã được chạy thành công!',
+        severity: 'success'
+      });
     } catch (err) {
+      console.error("Error running code:", err);
       setError(err.response?.data?.message || 'Lỗi khi chạy code');
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi chạy code!',
+        severity: 'error'
+      });
     }
   };
   
@@ -169,7 +266,7 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
         codeText: code,
         language
       }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.data.submission.result) {
@@ -185,9 +282,21 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
       
       setActiveTab(1); // Switch to Result tab
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Nộp bài thành công!',
+        severity: 'success'
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi khi nộp code');
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi nộp bài!',
+        severity: 'error'
+      });
     }
   };
   
@@ -198,7 +307,7 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
       setLoading(true);
       
       const response = await axios.post(`/api/code/submissions/${submissionId}/extend`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       setResult(prev => ({
@@ -207,9 +316,21 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
       }));
       
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Đã gia hạn thời gian container!',
+        severity: 'success'
+      });
     } catch (err) {
       setError('Không thể gia hạn container');
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Không thể gia hạn container!',
+        severity: 'error'
+      });
     }
   };
   
@@ -221,25 +342,37 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
       setError(null);
       
       const response = await axios.post(`/api/code/submissions/${submissionId}/rerun`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       setResult(response.data.result);
       setActiveTab(1); // Switch to Result tab
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Đã chạy lại code thành công!',
+        severity: 'success'
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi khi chạy lại code');
       setLoading(false);
+      
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi chạy lại code!',
+        severity: 'error'
+      });
     }
   };
   
-  const handleLanguageChange = (e) => {
-    const newLanguage = e.target.value;
+  const handleLanguageChange = (event) => {
+    const newLanguage = event.target.value;
     setLanguage(newLanguage);
     
     // Nếu không phải đang xem submission, đặt lại template
     if (!submissionId) {
-      setCode(templates[newLanguage]);
+      setCode(templates[newLanguage] || '');
     }
   };
   
@@ -273,27 +406,39 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
     return `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
   };
   
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   return (
     <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h5">Code Runner</Typography>
-        <TextField
-          select
-          label="Ngôn ngữ"
-          value={language}
-          onChange={handleLanguageChange}
-          sx={{ width: 200 }}
-          size="small"
-        >
-          {languageOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel id="language-select-label">Ngôn ngữ</InputLabel>
+          <Select
+            labelId="language-select-label"
+            value={language}
+            label="Ngôn ngữ"
+            onChange={handleLanguageChange}
+          >
+            {languageOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
       
-      <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 2 }}>
+      <Tabs 
+        value={activeTab} 
+        onChange={(e, newValue) => setActiveTab(newValue)} 
+        sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+      >
         <Tab label="Code Editor" />
         <Tab label="Kết quả" />
         {previousSubmissions.length > 0 && <Tab label="Bài nộp trước đó" />}
@@ -307,27 +452,40 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
             language={language}
             height="400px"
           />
+          
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
           <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
             <Button 
               variant="contained" 
+              color="primary"
+              startIcon={<PlayArrowIcon />}
               onClick={handleRunCode}
               disabled={loading || !code}
             >
               {loading ? <CircularProgress size={24} /> : 'Chạy code'}
             </Button>
+            
             {resourceId && courseId && (
               <Button 
                 variant="contained" 
-                color="primary"
+                color="secondary"
+                startIcon={<SaveIcon />}
                 onClick={handleSubmitCode}
                 disabled={loading || !code}
               >
                 {loading ? <CircularProgress size={24} /> : 'Nộp bài'}
               </Button>
             )}
+            
             {submissionId && (
               <Button 
                 variant="outlined" 
+                startIcon={<RefreshIcon />}
                 onClick={handleRerunCode}
                 disabled={loading}
               >
@@ -335,21 +493,21 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
               </Button>
             )}
           </Box>
-          {error && (
-            <Typography color="error" sx={{ mt: 2 }}>
-              {error}
-            </Typography>
-          )}
         </Box>
       )}
       
       {activeTab === 1 && (
         <Box>
-          {result && result.url ? (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : result && result.url ? (
             <Box>
               <Typography variant="subtitle1">
                 Kết quả chạy code:
               </Typography>
+              
               <Box
                 sx={{ 
                   mt: 2, 
@@ -365,16 +523,22 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
                   style={{ width: '100%', height: '100%', border: 'none' }}
                 />
               </Box>
+              
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="body2">
                   URL: <a href={result.url} target="_blank" rel="noopener noreferrer">{result.url}</a>
                 </Typography>
+                
                 {result.expiresAt && (
-                  <Typography variant="body2">
-                    Thời gian còn lại: {calculateTimeLeft(result.expiresAt)}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AccessTimeIcon fontSize="small" color="action" />
+                    <Typography variant="body2">
+                      Thời gian còn lại: {calculateTimeLeft(result.expiresAt)}
+                    </Typography>
+                  </Box>
                 )}
               </Box>
+              
               {result.containerId && (
                 <Button 
                   variant="outlined" 
@@ -385,10 +549,6 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
                   {loading ? <CircularProgress size={24} /> : 'Gia hạn thời gian'}
                 </Button>
               )}
-            </Box>
-          ) : loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-              <CircularProgress />
             </Box>
           ) : (
             <Typography>
@@ -403,33 +563,49 @@ const CodeRunner = ({ resourceId = null, courseId = null, submissionId = null })
           <Typography variant="subtitle1" sx={{ mb: 2 }}>
             Các bài nộp trước đó:
           </Typography>
+          
           {previousSubmissions.map((submission, index) => (
-            <Box 
+            <Paper 
               key={submission.submission_id}
               sx={{ 
                 p: 2, 
-                mb: 1, 
-                border: '1px solid #ddd', 
-                borderRadius: 1,
+                mb: 2, 
                 cursor: 'pointer',
-                '&:hover': { bgcolor: '#f5f5f5' }
+                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.03)' }
               }}
               onClick={() => handleLoadSubmission(submission)}
             >
-              <Typography variant="body1">
+              <Typography variant="subtitle2">
                 Bài nộp #{index + 1} - {new Date(submission.submitted_at).toLocaleString()}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Ngôn ngữ: {submission.language}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Trạng thái: {submission.status === 'graded' ? 'Đã chấm' : 
-                             submission.status === 'error' ? 'Lỗi' : 'Đang chờ'}
-              </Typography>
-            </Box>
+              
+              <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Ngôn ngữ: {submission.language}
+                </Typography>
+                
+                <Typography variant="body2" color="text.secondary">
+                  Trạng thái: {
+                    submission.status === 'graded' ? 'Đã chấm' : 
+                    submission.status === 'error' ? 'Lỗi' : 'Đang chờ'
+                  }
+                </Typography>
+              </Box>
+            </Paper>
           ))}
         </Box>
       )}
+      
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

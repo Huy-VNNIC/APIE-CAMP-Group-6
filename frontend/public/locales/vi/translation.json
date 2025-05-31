@@ -1,0 +1,207 @@
+{
+  "common": {
+    "welcome": "Chào mừng",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "logout": "Đăng xuất",
+    "profile": "Hồ sơ",
+    "save": "Lưu",
+    "cancel": "Hủy bỏ",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "loading": "Đang tải...",
+    "view_all": "Xem tất cả",
+    "view_details": "Xem chi tiết",
+    "user": "người dùng",
+    "close": "Đóng"
+  },
+  "app": {
+    "title": "Online Coding Platform",
+    "description": "Nền tảng học lập trình trực tuyến"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "courses": "Khóa học",
+    "playground": "Code Playground",
+    "dashboard": "Bảng điều khiển",
+    "assignments": "Bài tập"
+  },
+  "auth": {
+    "login_title": "Đăng nhập",
+    "register_title": "Đăng ký",
+    "username": "Tên đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirm_password": "Xác nhận mật khẩu",
+    "full_name": "Họ và tên đầy đủ",
+    "role": "Vai trò",
+    "student": "Học viên",
+    "instructor": "Giảng viên",
+    "admin": "Quản trị viên",
+    "remember_me": "Ghi nhớ đăng nhập",
+    "forgot_password": "Quên mật khẩu?",
+    "no_account": "Chưa có tài khoản?",
+    "have_account": "Đã có tài khoản?",
+    "sign_up": "Đăng ký ngay",
+    "sign_in": "Đăng nhập",
+    "logout_success": "Đăng xuất thành công"
+  },
+  "dashboard": {
+    "welcome_back": "Chào mừng trở lại",
+    "welcome_message": "Tiếp tục hành trình học tập của bạn với các bài học và bài tập mới.",
+    "your_courses": "Khóa học của bạn",
+    "recent_exercises": "Bài tập gần đây",
+    "continue_learning": "Tiếp tục học",
+    "progress": "Tiến độ học tập",
+    "completed": "Hoàn thành",
+    "quick_tools": "Công cụ nhanh",
+    "explore_courses": "Khám phá khóa học",
+    "no_courses": "Bạn chưa đăng ký khóa học nào",
+    "last_accessed": "Truy cập gần đây",
+    "stats": {
+      "completed_courses": "Hoàn thành khóa học",
+      "submitted_exercises": "Nộp bài tập",
+      "average_score": "Điểm trung bình"
+    }
+  },
+  "courses": {
+    "title": "Khóa học",
+    "all_courses": "Tất cả khóa học",
+    "search": "Tìm kiếm khóa học",
+    "filter": {
+      "category": "Danh mục",
+      "level": "Trình độ",
+      "all": "Tất cả",
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "database": "Cơ sở dữ liệu",
+      "devops": "DevOps",
+      "beginner": "Cơ bản",
+      "intermediate": "Trung cấp",
+      "advanced": "Nâng cao"
+    },
+    "enroll": "Đăng ký khóa học",
+    "details": {
+      "content": "Nội dung khóa học",
+      "instructor": "Giảng viên",
+      "reviews": "Đánh giá",
+      "what_you_learn": "Bạn sẽ học được gì",
+      "lessons": "bài học",
+      "duration": "Tổng thời lượng",
+      "preview": "Xem trước",
+      "enrolled_students": "học viên",
+      "intro_lesson": "Bài học giới thiệu",
+      "view_now": "Xem ngay",
+      "enroll_to_view": "Đăng ký để xem",
+      "course_content": "Nội dung khóa học",
+      "assignments": "Bài tập",
+      "no_assignments": "Khóa học này chưa có bài tập",
+      "related_videos": "Video liên quan",
+      "money_back": "Đảm bảo hoàn tiền trong 30 ngày",
+      "view_on_youtube": "Xem trên YouTube",
+      "due_date": "Ngày đáo hạn"
+    }
+  },
+  "assignments": {
+    "title": "Bài tập",
+    "search": "Tìm kiếm bài tập",
+    "all": "Tất cả bài tập",
+    "overdue": "Quá hạn",
+    "upcoming": "Sắp đến hạn",
+    "completed": "Đã hoàn thành",
+    "open": "Đang mở",
+    "urgent": "Gấp",
+    "start": "Bắt đầu làm",
+    "continue": "Tiếp tục làm",
+    "view": "Xem chi tiết",
+    "no_assignments": "Không tìm thấy bài tập nào",
+    "no_overdue": "Không có bài tập quá hạn",
+    "no_completed": "Chưa có bài tập nào được hoàn thành",
+    "due_date": "Ngày đáo hạn",
+    "progress": "Tiến độ",
+    "filter": {
+      "all": "Tất cả",
+      "language": "Ngôn ngữ"
+    },
+    "sort_by": "Sắp xếp theo"
+  },
+  "playground": {
+    "title": "Code Playground",
+    "language": "Ngôn ngữ",
+    "run_code": "Chạy code",
+    "running": "Đang chạy...",
+    "save_code": "Lưu code",
+    "copy_code": "Sao chép code",
+    "share_code": "Chia sẻ code",
+    "result": "Kết quả",
+    "error": "Lỗi",
+    "guide": {
+      "title": "Hướng dẫn sử dụng",
+      "step1": "Chọn ngôn ngữ lập trình bạn muốn sử dụng.",
+      "step2": "Viết hoặc dán code của bạn vào editor.",
+      "step3": "Nhấn nút \"Chạy code\" để thực thi và xem kết quả.",
+      "step4": "Sử dụng các nút sao chép, lưu hoặc chia sẻ code theo nhu cầu.",
+      "note": "Lưu ý: Mỗi lần chạy code sẽ tạo một container mới và kết quả chỉ có hiệu lực trong thời gian giới hạn."
+    }
+  },
+  "profile": {
+    "title": "Hồ sơ người dùng",
+    "personal_info": "Thông tin cá nhân",
+    "edit_info": "Chỉnh sửa thông tin",
+    "account_info": "Thông tin tài khoản",
+    "change_password": "Đổi mật khẩu",
+    "bio": "Giới thiệu",
+    "bio_placeholder": "Thêm một chút giới thiệu về bản thân...",
+    "bio_helper": "Viết một vài điều về bản thân và sở thích của bạn",
+    "update_success": "Hồ sơ đã được cập nhật thành công!",
+    "recent_activity": "Hoạt động gần đây",
+    "enrolled_courses": "Khóa học đã đăng ký",
+    "completed_exercises": "Bài tập đã hoàn thành",
+    "created_courses": "Khóa học đã tạo"
+  },
+  "errors": {
+    "login_failed": "Đăng nhập thất bại. Vui lòng thử lại.",
+    "register_failed": "Đăng ký không thành công. Vui lòng thử lại.",
+    "password_mismatch": "Mật khẩu nhập lại không khớp",
+    "server_error": "Lỗi server",
+    "connection_error": "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.",
+    "not_found": "Không tìm thấy trang",
+    "code_error": "Lỗi khi chạy code!",
+    "no_course": "Không tìm thấy khóa học"
+  }
+}
+{
+  "assignments": {
+    "title": "Bài tập",
+    "search": "Tìm kiếm bài tập",
+    "all": "Tất cả bài tập",
+    "overdue": "Quá hạn",
+    "upcoming": "Sắp đến hạn",
+    "completed": "Đã hoàn thành",
+    "open": "Đang mở",
+    "urgent": "Gấp",
+    "start": "Bắt đầu làm",
+    "continue": "Tiếp tục làm",
+    "view": "Xem chi tiết",
+    "no_assignments": "Không tìm thấy bài tập nào",
+    "no_overdue": "Không có bài tập quá hạn",
+    "no_completed": "Chưa có bài tập nào được hoàn thành",
+    "due_date": "Ngày đáo hạn",
+    "progress": "Tiến độ",
+    "details": "Chi tiết bài tập",
+    "actions": "Thao tác",
+    "view_course": "Xem khóa học",
+    "instructions": "Hướng dẫn",
+    "code_template": "Mẫu code",
+    "open_in_playground": "Mở trong Code Playground",
+    "my_notes": "Ghi chú của tôi",
+    "notes_placeholder": "Viết ghi chú về bài tập này...",
+    "notes_saved": "Ghi chú được lưu tự động",
+    "not_found": "Không tìm thấy bài tập",
+    "filter": {
+      "all": "Tất cả",
+      "language": "Ngôn ngữ"
+    },
+    "sort_by": "Sắp xếp theo"
+  }
+}

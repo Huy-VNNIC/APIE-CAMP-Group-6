@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Code Runner Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 10px;
+    }
+    select {
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      min-height: 200px;
+    }
+    iframe {
+      width: 100%;
+      height: 300px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Code Runner Test</h1>
+  <div>
+    <select id="language">
+      <option value="javascript">JavaScript</option>
+      <option value="html">HTML</option>
+      <option value="python">Python</option>
+    </select>
+  </div>
+  <textarea id="code">console.log("Hello, World!"); 
+module.exports = function() { 
+  return { message: "Hello from code runner!" }; 
+};</textarea>
+  <button id="runBtn">Run Code</button>
+  <div id="result">Results will appear here...</div>
+  <div id="frameContainer" style="display:none;">
+    <h3>Result in iframe:</h3>
+    <iframe id="resultFrame"></iframe>
+  </div>
+
+  <script>
+    document.getElementById('runBtn').addEventListener('click', async () => {
+      const code = document.getElementById('code').value;
+      const language = document.getElementById('language').value;
+      const resultDiv = document.getElementById('result');
+      const frameContainer = document.getElementById('frameContainer');
+      const resultFrame = document.getElementById('resultFrame');
+      
+      resultDiv.innerHTML = 'Running code...';
+      frameContainer.style.display = 'none';
+      
+      try {
+        const response = await fetch('http://localhost:3000/api/test/run-code', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code, language })
+        });
+        
+        const data = await response.json();
+        console.log('Response:', data);
+        
+        resultDiv.innerHTML = `
+          <h3>Response:</h3>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+        
+        if (data.containerInfo && data.containerInfo.url) {
+          frameContainer.style.display = 'block';
+          resultFrame.src = data.containerInfo.url;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `
+          <h3>Error:</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    });
+    
+    // Set language-specific templates
+    document.getElementById('language').addEventListener('change', (e) => {
+      const language = e.target.value;
+      let template = '';
+      
+      switch(language) {
+        case 'javascript':
+          template = `console.log("Hello, World!"); 
+module.exports = function() { 
+  return { message: "Hello from JavaScript!" }; 
+};`;
+          break;
+        case 'html':
+          template = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Page</title>
+</head>
+<body>
+  <h1>Hello from HTML!</h1>
+  <p>Current time: <script>document.write(new Date().toString())</script></p>
+</body>
+</html>`;
+          break;
+        case 'python':
+          template = `def main():
+    print("Hello from Python!")
+    return {"message": "Hello from Python!"}
+
+if __name__ == "__main__":
+    main()`;
+          break;
+      }
+      
+      document.getElementById('code').value = template;
+    });
+  </script>
+</body>
+</html>

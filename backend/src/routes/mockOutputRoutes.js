@@ -1,48 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const ContainerService = require('../services/containerService');
 const fs = require('fs').promises;
 const path = require('path');
 
-const containerService = new ContainerService();
-
-// Bỏ yêu cầu xác thực để ai cũng có thể test
-router.post('/run-code', async (req, res) => {
-  try {
-    console.log("[TestRoutes] Request received to run code, language:", req.body.language);
-    const { code, language } = req.body;
-    
-    if (!code) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu code'
-      });
-    }
-    
-    // Trích xuất một phần code để log (tránh log quá nhiều)
-    const codePreview = code.length > 100 ? code.substring(0, 100) + '...' : code;
-    console.log(`[TestRoutes] Processing ${language} code: ${codePreview}`);
-    
-    const result = await containerService.processCode(code, language || 'javascript');
-    
-    res.json({
-      success: true,
-      message: 'Code đã được chạy thành công',
-      containerInfo: result
-    });
-  } catch (error) {
-    console.error('[TestRoutes] Error running code:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi khi chạy code: ' + (error.message || 'Lỗi không xác định'),
-      error: error.message
-    });
-  }
-});
-
-// API để xem kết quả code
+// API để xem output của code đã lưu
 router.get('/mock-output', async (req, res) => {
   try {
+    console.log("[MockOutput] Request received:", req.query);
     const { id, language } = req.query;
     
     if (!id) {
@@ -56,48 +20,42 @@ router.get('/mock-output', async (req, res) => {
     const fileName = `${id}${extension}`;
     const filePath = path.join(__dirname, '../../temp', fileName);
     
+    console.log(`[MockOutput] Attempting to read file: ${filePath}`);
+    
     // Đọc nội dung file
     let fileContent;
     try {
       fileContent = await fs.readFile(filePath, 'utf8');
     } catch (error) {
-      console.error('[TestRoutes] Error reading file:', error);
-      return res.status(404).send('File not found or could not be read');
+      console.error('[MockOutput] File read error:', error);
+      return res.status(404).send('File not found or could not be read. Please try running your code again.');
+    }
+    
+    // Nếu là HTML, trả về HTML
+    if (language === 'html') {
+      res.header('Content-Type', 'text/html');
+      return res.send(fileContent);
     }
     
     // Tạo HTML response
-    const html = generateResultHtml(fileContent, language || 'javascript', id);
+    const html = generateResultHtml(fileContent, language, id);
     
     res.send(html);
   } catch (error) {
-    console.error('[TestRoutes] Error serving mock output:', error);
-    res.status(500).send('Error serving mock output: ' + error.message);
+    console.error('[MockOutput] Error serving output:', error);
+    res.status(500).send(`
+      <html>
+        <body>
+          <h1>Error</h1>
+          <p>Could not display code output: ${error.message}</p>
+          <p>Please try running your code again.</p>
+        </body>
+      </html>
+    `);
   }
 });
 
-// API để extend thời gian container
-router.post('/extend-container/:containerId', async (req, res) => {
-  try {
-    const { containerId } = req.params;
-    
-    console.log(`[TestRoutes] Extending container time for ${containerId}`);
-    const result = await containerService.extendContainerTime(containerId);
-    
-    res.json({
-      success: true,
-      message: 'Container time extended successfully',
-      container: result
-    });
-  } catch (error) {
-    console.error('[TestRoutes] Error extending container time:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi khi extend container: ' + error.message,
-      error: error.message
-    });
-  }
-});
-
+// Hàm để xác định extension file
 function getFileExtension(language) {
   switch (language.toLowerCase()) {
     case 'javascript':
@@ -117,6 +75,7 @@ function getFileExtension(language) {
   }
 }
 
+// Hàm escapeHtml để tránh XSS
 function escapeHtml(unsafe) {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -126,6 +85,7 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
+// Hàm tạo output giả lập
 function generateMockOutput(code, language) {
   let output = 'Code executed successfully!\n\n';
   
@@ -133,21 +93,21 @@ function generateMockOutput(code, language) {
     case 'javascript':
       output += 'JavaScript Output:\n';
       if (code.includes('console.log')) {
-        const matches = code.match(/console\.log\(['"](.*)['"]\)/g);
+        const matches = code.match(/console\.log\(['"`](.*?)['"`]\)/g);
         if (matches) {
           output += matches
-            .map(match => match.replace(/console\.log\(['"](.*)['"].*\)/, '$1'))
+            .map(match => match.replace(/console\.log\(['"`](.*?)['"`].*?\)/, '$1'))
             .join('\n');
         } else {
-          output += '// No visible output';
+          output += '// No visible console output';
         }
       } else {
-        output += '// No console.log statements found.';
+        output += '// No console.log statements found';
       }
       
-      // Add module exports info if present
+      // Add module exports result
       if (code.includes('module.exports')) {
-        output += '\n\nExported result:\n';
+        output += '\n\nExported Result:\n';
         output += '{\n  "message": "Hello, Coder!",\n  "timestamp": "' + new Date().toISOString() + '"\n}';
       }
       break;
@@ -155,25 +115,21 @@ function generateMockOutput(code, language) {
     case 'python':
       output += 'Python Output:\n';
       if (code.includes('print')) {
-        const matches = code.match(/print\(['"](.*)['"].*\)/g);
+        const matches = code.match(/print\(['"`](.*?)['"`].*?\)/g);
         if (matches) {
           output += matches
-            .map(match => match.replace(/print\(['"](.*)['"].*\)/, '$1'))
+            .map(match => match.replace(/print\(['"`](.*?)['"`].*?\)/, '$1'))
             .join('\n');
         } else {
-          output += '# No visible output';
+          output += '# No visible print output';
         }
       } else {
-        output += '# No print statements found.';
+        output += '# No print statements found';
       }
       break;
     
     case 'html':
-      if (code.includes('<html>')) {
-        output += 'HTML has been rendered successfully.';
-      } else {
-        output += 'HTML has been rendered with default structure.';
-      }
+      output += 'HTML renders in the browser';
       break;
     
     default:
@@ -183,15 +139,10 @@ function generateMockOutput(code, language) {
   return output;
 }
 
+// Hàm tạo HTML kết quả
 function generateResultHtml(fileContent, language, id) {
-  // Generate HTML to display the result
   const languageDisplay = language.charAt(0).toUpperCase() + language.slice(1);
   const output = generateMockOutput(fileContent, language);
-  
-  if (language === 'html') {
-    // For HTML, actually render the HTML content
-    return fileContent;
-  }
   
   return `
   <!DOCTYPE html>
