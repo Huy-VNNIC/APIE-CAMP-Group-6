@@ -22,6 +22,22 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
+const resourceRoutes = require('./routes/learningResourceRoutes');
+const codeSubmissionRoutes = require('./routes/codeSubmissionRoutes');
+const quizRoutes = require('./routes/quizRoutes');
+const supportTicketRoutes = require('./routes/supportTicketRoutes');
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/student', enrollmentRoutes);
+app.use('/api/learning', resourceRoutes);
+app.use('/api/code', codeSubmissionRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/support', supportTicketRoutes);
+
 // Route kiểm tra API
 app.get('/', (req, res) => {
   res.json({ 
