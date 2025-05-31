@@ -1,0 +1,1 @@
+console.log("Hello, World!"); module.exports = function(params) { return { message: "Hello from container!", time: new Date() }; }

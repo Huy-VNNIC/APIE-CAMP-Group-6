@@ -55,6 +55,37 @@ class CodeSubmission {
     const queryResult = await db.query(query, [submissionId, result, status]);
     return queryResult.rows[0];
   }
+  
+  // Lấy tất cả code submissions cho một resource
+  static async getSubmissionsByResource(resourceId) {
+    const query = `
+      SELECT cs.*, u.username, u.full_name
+      FROM code_submissions cs
+      JOIN users u ON cs.student_id = u.user_id
+      WHERE cs.resource_id = $1
+      ORDER BY cs.submitted_at DESC
+    `;
+    
+    const result = await db.query(query, [resourceId]);
+    return result.rows;
+  }
+  
+  // Lấy các submissions mới nhất cho từng resource trong một khóa học
+  static async getLatestSubmissionsByStudentAndCourse(studentId, courseId) {
+    const query = `
+      SELECT DISTINCT ON (cs.resource_id) 
+        cs.*, 
+        lr.title as resource_title, 
+        lr.type as resource_type
+      FROM code_submissions cs
+      JOIN learning_resources lr ON cs.resource_id = lr.resource_id
+      WHERE cs.student_id = $1 AND cs.course_id = $2
+      ORDER BY cs.resource_id, cs.submitted_at DESC
+    `;
+    
+    const result = await db.query(query, [studentId, courseId]);
+    return result.rows;
+  }
 }
 
 module.exports = CodeSubmission;

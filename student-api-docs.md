@@ -1,16 +1,22 @@
-# API Documentation cho Student Role
+# Code Execution API Documentation
 
-## Đăng nhập và Đăng ký
+## Tính năng Code Execution cho Student
 
-### Đăng ký tài khoản
-- **URL**: `/api/auth/register`
+Tính năng Code Execution cho phép sinh viên viết code, biên dịch và chạy trong môi trường an toàn sử dụng Docker, sau đó xem kết quả trực tiếp trên trình duyệt.
+
+## API Endpoints
+
+### 1. Nộp code và chạy trong container
+
+- **URL**: `/api/code/submit`
 - **Method**: `POST`
-- **Body**:
+- **Authentication**: Yêu cầu Bearer token
+- **Permissions**: Role `student`
+- **Request Body**:
   ```json
   {
-    "username": "student1",
-    "email": "student1@example.com",
-    "password": "password123",
-    "fullName": "Học sinh 1",
-    "role": "student"
+    "resourceId": 1,
+    "courseId": 1,
+    "codeText": "console.log('Hello World!');",
+    "language": "javascript"
   }

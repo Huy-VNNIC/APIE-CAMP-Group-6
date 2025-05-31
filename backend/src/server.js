@@ -29,7 +29,8 @@ const resourceRoutes = require('./routes/learningResourceRoutes');
 const codeSubmissionRoutes = require('./routes/codeSubmissionRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const supportTicketRoutes = require('./routes/supportTicketRoutes');
-
+const testRoutes = require('./routes/testRoutes');
+app.use('/api/test', testRoutes);
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/student', enrollmentRoutes);
@@ -77,6 +78,8 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Internal Server Error' });
 });
+
+app.use('/api/code', codeSubmissionRoutes);
 
 // Start server
 app.listen(PORT, () => {

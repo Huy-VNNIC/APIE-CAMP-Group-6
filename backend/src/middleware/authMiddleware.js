@@ -2,13 +2,13 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
 exports.protect = async (req, res, next) => {
+  // Kiểm tra header Authorization
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Yêu cầu đăng nhập' });
+  }
+
   try {
-    // Kiểm tra header Authorization
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Yêu cầu đăng nhập' });
-    }
-    
     // Lấy token
     const token = authHeader.split(' ')[1];
     
@@ -32,6 +32,7 @@ exports.protect = async (req, res, next) => {
   } catch (error) {
     console.error('Auth middleware error:', error);
     if (error.name === 'JsonWebTokenError') {
+      console.log('JWT Error details:', error.message);
       return res.status(401).json({ message: 'Token không hợp lệ' });
     }
     if (error.name === 'TokenExpiredError') {
