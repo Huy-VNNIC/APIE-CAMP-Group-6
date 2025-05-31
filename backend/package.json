@@ -4,50 +4,27 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Huy-VNNIC/APIE-CAMP-Group-6.git"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Huy-VNNIC/APIE-CAMP-Group-6/issues"
-  },
-  "homepage": "https://github.com/Huy-VNNIC/APIE-CAMP-Group-6#readme",
-  "devDependencies": {
-    "nodemon": "^3.1.10"
-  },
   "dependencies": {
-    "@codemirror/basic-setup": "^0.20.0",
-    "@codemirror/commands": "^6.8.1",
-    "@codemirror/lang-javascript": "^6.2.4",
-    "@codemirror/view": "^6.36.8",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.2",
-    "body-parser": "^2.2.0",
-    "compression": "^1.8.0",
-    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
-    "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "monaco-editor": "^0.52.2",
-    "morgan": "^1.10.0",
-    "mysql2": "^3.14.1",
-    "react-codemirror6": "^1.1.0",
-    "react-monaco-editor": "^0.58.0",
-    "sequelize": "^6.37.7",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "uuid": "^11.1.0"
+    "multer": "^2.0.0",
+    "pg": "^8.16.0",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
