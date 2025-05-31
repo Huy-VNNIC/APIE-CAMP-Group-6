@@ -823,4 +823,540 @@ const mockCourses = [
   }
 ];
 
-// The rest of your file remains unchanged
+// TabPanel component for switching between tabs
+const TabPanel = (props) => {
+  const { children, value, index, ...other } = props;
+  
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`course-tabpanel-${index}`}
+      aria-labelledby={`course-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ pt: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+};
+
+const CourseDetails = () => {
+  const { t } = useTranslation();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [openVideoDialog, setOpenVideoDialog] = useState(false);
+  const [expandedLessons, setExpandedLessons] = useState({});
+  
+  useEffect(() => {
+    // Simulate API call to fetch course details
+    setTimeout(() => {
+      const foundCourse = mockCourses.find(c => c.id === id);
+      
+      if (foundCourse) {
+        setCourse(foundCourse);
+        // Set first lesson as preview if it exists
+        if (foundCourse.lessons && foundCourse.lessons.length > 0) {
+          const previewLesson = foundCourse.lessons.find(lesson => lesson.isPreview) || foundCourse.lessons[0];
+          setSelectedLesson(previewLesson);
+        }
+      } else {
+        setError('Course not found');
+      }
+      
+      setLoading(false);
+    }, 500);
+  }, [id]);
+  
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+  
+  const handleEnrollment = () => {
+    // In a real application, this would call an API to enroll the user
+    alert(`Enrolled in course: ${course.title}`);
+    // Navigate to course content or dashboard
+    navigate('/');
+  };
+  
+  const handlePlayVideo = (lesson) => {
+    setSelectedLesson(lesson);
+    if (lesson.isPreview || true) { // For demo purposes, allow any lesson to be played
+      setOpenVideoDialog(true);
+    } else {
+      // Show enrollment requirement if not preview
+      alert('Please enroll in the course to view this lesson');
+    }
+  };
+  
+  const handleCloseVideoDialog = () => {
+    setOpenVideoDialog(false);
+  };
+  
+  const toggleLessonExpand = (lessonId) => {
+    setExpandedLessons({
+      ...expandedLessons,
+      [lessonId]: !expandedLessons[lessonId]
+    });
+  };
+  
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mt: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
+  
+  if (!course) {
+    return (
+      <Alert severity="warning" sx={{ mt: 2 }}>
+        Unable to load course information. Please try again later.
+      </Alert>
+    );
+  }
+  
+  // Format for level display
+  const levelDisplay = {
+    'beginner': { text: 'Beginner', color: 'success' },
+    'intermediate': { text: 'Intermediate', color: 'warning' },
+    'advanced': { text: 'Advanced', color: 'error' }
+  };
+  
+  return (
+    <Box>
+      {/* Course header */}
+      <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 4, borderRadius: 2, mb: 4 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={8}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {course.title}
+            </Typography>
+            <Typography variant="body1" paragraph>
+              {course.description}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Rating value={course.rating} precision={0.5} readOnly />
+              <Typography variant="body2" sx={{ ml: 1 }}>
+                ({course.rating}/5.0) • {course.enrollments} students
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Chip 
+                label={levelDisplay[course.level].text}
+                color={levelDisplay[course.level].color}
+                size="small"
+              />
+              <Chip 
+                icon={<AccessTimeIcon fontSize="small" />}
+                label={course.duration}
+                variant="outlined"
+                size="small"
+              />
+              <Chip 
+                icon={<LanguageIcon fontSize="small" />}
+                label={course.language}
+                variant="outlined"
+                size="small"
+              />
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
+            <Card sx={{ width: '100%', maxWidth: 350 }}>
+              <img
+                src={course.image}
+                alt={course.title}
+                style={{ width: '100%', height: 'auto' }}
+              />
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {t('courses.enroll')}
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  size="large"
+                  onClick={handleEnrollment}
+                  sx={{ mb: 2 }}
+                >
+                  Enroll Now
+                </Button>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  30-day money-back guarantee
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+      
+      {/* Preview video section */}
+      {selectedLesson && selectedLesson.videoUrl && (
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Introductory Lesson
+          </Typography>
+          <Box sx={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 1, mb: 2 }}>
+            <iframe 
+              src={selectedLesson.videoUrl}
+              title={selectedLesson.title}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </Box>
+          <Typography variant="h6">
+            {selectedLesson.title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {selectedLesson.description}
+          </Typography>
+        </Paper>
+      )}
+      
+      {/* Tabs navigation */}
+      <Paper sx={{ mb: 4 }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          indicatorColor="primary"
+          textColor="primary"
+          variant="fullWidth"
+        >
+          <Tab label="Content" />
+          <Tab label="Instructor" />
+          <Tab label="Reviews" />
+          <Tab label="Assignments" />
+        </Tabs>
+      </Paper>
+      
+      {/* Content tab */}
+      <TabPanel value={tabValue} index={0}>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={8}>
+            <Typography variant="h5" gutterBottom>
+              Course Content
+            </Typography>
+            <Typography variant="body2" paragraph>
+              {course.lessons.length} lessons • Total Duration: {course.duration}
+            </Typography>
+            
+            <List sx={{ bgcolor: 'background.paper', border: '1px solid #eee', borderRadius: 1 }}>
+              {course.lessons.map((lesson, index) => (
+                <React.Fragment key={lesson.id}>
+                  {index > 0 && <Divider />}
+                  <ListItem 
+                    sx={{ 
+                      flexDirection: 'column', 
+                      alignItems: 'stretch',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        {lesson.isPreview ? (
+                          <PlayArrowIcon color="primary" />
+                        ) : (
+                          <LockIcon color="action" />
+                        )}
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <Typography variant="subtitle1">
+                              {index + 1}. {lesson.title}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                                {lesson.duration}
+                              </Typography>
+                              {lesson.isPreview && (
+                                <Chip 
+                                  label="Preview"
+                                  color="info"
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              )}
+                              <IconButton size="small" onClick={() => toggleLessonExpand(lesson.id)}>
+                                {expandedLessons[lesson.id] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        }
+                        onClick={() => handlePlayVideo(lesson)}
+                      />
+                    </Box>
+                    
+                    <Collapse in={expandedLessons[lesson.id]} timeout="auto" unmountOnExit sx={{ width: '100%', pl: 5 }}>
+                      <Box sx={{ py: 1 }}>
+                        <Typography variant="body2" color="text.secondary" paragraph>
+                          {lesson.description || 'No description available for this lesson.'}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          startIcon={<PlayArrowIcon />}
+                          onClick={() => handlePlayVideo(lesson)}
+                        >
+                          {lesson.isPreview ? 'Watch Now' : 'Enroll to Watch'}
+                        </Button>
+                      </Box>
+                    </Collapse>
+                  </ListItem>
+                </React.Fragment>
+              ))}
+            </List>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Typography variant="h5" gutterBottom>
+              What You'll Learn
+            </Typography>
+            <List>
+              {course.outcomes.map((outcome, index) => (
+                <ListItem key={index} disableGutters>
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <CheckCircleIcon color="success" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary={outcome} />
+                </ListItem>
+              ))}
+            </List>
+            
+            {/* Related videos section */}
+            {course.relatedVideos && course.relatedVideos.length > 0 && (
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                  Related Videos
+                </Typography>
+                <Grid container spacing={2}>
+                  {course.relatedVideos.map(video => (
+                    <Grid item xs={12} key={video.id}>
+                      <Card variant="outlined">
+                        <CardMedia
+                          component="img"
+                          height="140"
+                          image={video.thumbnail}
+                          alt={video.title}
+                        />
+                        <CardContent sx={{ pt: 1, pb: 1 }}>
+                          <Typography variant="subtitle2" noWrap>
+                            {video.title}
+                          </Typography>
+                        </CardContent>
+                        <Button
+                          fullWidth
+                          startIcon={<PlayArrowIcon />}
+                          onClick={() => window.open(video.videoUrl.replace('embed/', 'watch?v='), '_blank')}
+                        >
+                          View on YouTube
+                        </Button>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            )}
+          </Grid>
+        </Grid>
+      </TabPanel>
+      
+      {/* Instructor tab */}
+      <TabPanel value={tabValue} index={1}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Avatar
+            sx={{ width: 80, height: 80, mr: 3, bgcolor: 'primary.main' }}
+          >
+            <PersonIcon fontSize="large" />
+          </Avatar>
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              {course.instructor}
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              {course.instructorTitle}
+            </Typography>
+          </Box>
+        </Box>
+        <Typography variant="body1" paragraph>
+          {course.instructorBio || 'No detailed information available about this instructor.'}
+        </Typography>
+      </TabPanel>
+      
+      {/* Reviews tab */}
+      <TabPanel value={tabValue} index={2}>
+        <Typography variant="h5" gutterBottom>
+          Student Reviews
+        </Typography>
+        
+        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+          <Rating value={course.rating} precision={0.5} readOnly size="large" />
+          <Typography variant="h6" sx={{ ml: 1 }}>
+            {course.rating}/5.0
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+            ({course.reviews?.length || 0} reviews)
+          </Typography>
+        </Box>
+        
+        {course.reviews?.length > 0 ? (
+          course.reviews.map((review) => (
+            <Paper key={review.id} sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Avatar sx={{ mr: 1, bgcolor: 'primary.main' }}>
+                    {review.user.charAt(0)}
+                  </Avatar>
+                  <Typography variant="subtitle1">
+                    {review.user}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Rating value={review.rating} size="small" readOnly />
+                </Box>
+              </Box>
+              <Typography variant="body2" paragraph>
+                {review.comment}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Reviewed on: {review.date}
+              </Typography>
+            </Paper>
+          ))
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No reviews yet for this course.
+          </Typography>
+        )}
+      </TabPanel>
+      
+      {/* Assignments tab */}
+      <TabPanel value={tabValue} index={3}>
+        <Typography variant="h5" gutterBottom>
+          Assignments
+        </Typography>
+        
+        {course.assignments && course.assignments.length > 0 ? (
+          <Grid container spacing={2}>
+            {course.assignments.map(assignment => (
+              <Grid item xs={12} key={assignment.id}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <AssignmentIcon color="primary" sx={{ mr: 2, mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="h6" gutterBottom>
+                          {assignment.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" paragraph>
+                          {assignment.description}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <AccessTimeIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
+                          <Typography variant="body2" color="text.secondary">
+                            Due Date: {assignment.dueDate}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+                    <Button 
+                      variant="outlined" 
+                      size="small"
+                      onClick={() => navigate(`/assignments/${assignment.id}`)}
+                    >
+                      View Details
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      color="primary"
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => navigate(`/playground?assignment=${assignment.id}`)}
+                    >
+                      Start Assignment
+                    </Button>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            This course has no assignments yet.
+          </Typography>
+        )}
+      </TabPanel>
+      
+      {/* Video dialog */}
+      <Dialog
+        open={openVideoDialog}
+        onClose={handleCloseVideoDialog}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          {selectedLesson?.title}
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          {selectedLesson && (
+            <Box sx={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              <iframe 
+                src={selectedLesson.videoUrl}
+                title={selectedLesson.title}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </Box>
+          )}
+          <Box sx={{ p: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              {selectedLesson?.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedLesson?.description}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseVideoDialog}>Close</Button>
+          <Button 
+            variant="contained"
+            color="primary"
+            onClick={handleEnrollment}
+            startIcon={<SchoolIcon />}
+          >
+            Enroll in Course
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default CourseDetails;

@@ -13,8 +13,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Paper,
-  LinearProgress
+  Paper
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
@@ -24,7 +23,6 @@ import AssignmentCard from '../components/AssignmentCard';
 // Icons
 import CodeIcon from '@mui/icons-material/Code';
 import SchoolIcon from '@mui/icons-material/School';
-import DescriptionIcon from '@mui/icons-material/Description';
 import PersonIcon from '@mui/icons-material/Person';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import AssignmentIcon from '@mui/icons-material/Assignment';

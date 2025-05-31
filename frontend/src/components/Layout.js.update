@@ -1,0 +1,5 @@
+// Make sure to add these import to the top of Layout.js
+import VideocamIcon from '@mui/icons-material/Videocam';
+
+// Then add this to the pages array in Layout.js
+{ name: 'Live Sessions', path: '/live-sessions', icon: <VideocamIcon />, auth: true },

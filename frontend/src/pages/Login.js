@@ -1,111 +1,108 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { 
   Box, 
+  Typography, 
   TextField, 
   Button, 
-  Typography, 
   Paper, 
-  CircularProgress, 
-  Alert
+  FormControlLabel, 
+  Checkbox,
+  Link,
+  Alert,
+  CircularProgress
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const { t } = useTranslation();
+  const { login } = useContext(UserContext);
+  const navigate = useNavigate();
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  const { setToken, setUser, setIsAuthenticated, isAuthenticated } = useContext(UserContext);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Nếu người dùng đã đăng nhập, chuyển hướng đến trang chủ
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
-
+  const [loading, setLoading] = useState(false);
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    // Validate input
+    if (!username || !password) {
+      setError('Please enter username and password');
+      return;
+    }
+    
     setLoading(true);
     
+    // Mock login logic - in a real app, this would call an API
     try {
-      console.log('Đang cố gắng đăng nhập với:', { username, password });
-
-      // Sử dụng API endpoint trực tiếp và đầy đủ
-      const response = await axios.post('http://localhost:3000/api/auth/login', {
-        username,
-        password
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+      // Check for instructor mock login
+      if (username === 'instructor' && password === 'instructor123') {
+        // Mock instructor login
+        const userData = {
+          id: 'instructor-123',
+          username: 'instructor',
+          fullName: 'John Smith',
+          email: 'instructor@example.com',
+          role: 'instructor'
+        };
+        
+        // Store user data in context
+        login(userData, 'mock-token-instructor-123');
+        
+        // Navigate to dashboard after successful login
+        navigate('/instructor');
+        return;
+      }
       
-      console.log('Phản hồi đăng nhập:', response);
-      
-      if (response.data && response.data.token) {
-        console.log('Đăng nhập thành công, token:', response.data.token);
+      // Check for student mock login
+      if (username === 'student' && password === 'student123') {
+        // Mock student login
+        const userData = {
+          id: 'student-123',
+          username: 'student',
+          fullName: 'Jane Doe',
+          email: 'student@example.com',
+          role: 'student'
+        };
         
-        // Lưu token vào localStorage
-        localStorage.setItem('token', response.data.token);
+        // Store user data in context
+        login(userData, 'mock-token-student-123');
         
-        // Cập nhật context
-        setToken(response.data.token);
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-        
-        // Chuyển hướng đến trang chủ
+        // Navigate to dashboard after successful login
         navigate('/');
-      } else {
-        console.error('Định dạng phản hồi không hợp lệ:', response.data);
-        setError(t('errors.login_failed'));
+        return;
       }
-    } catch (err) {
-      console.error('Lỗi đăng nhập:', err);
       
-      if (err.response) {
-        console.error('Chi tiết lỗi từ server:', err.response.data);
-        setError(err.response.data.message || t('errors.login_failed'));
-      } else if (err.request) {
-        console.error('Không nhận được phản hồi:', err.request);
-        setError(t('errors.connection_error'));
-      } else {
-        console.error('Lỗi thiết lập request:', err.message);
-        setError(t('errors.server_error') + ': ' + err.message);
-      }
+      // If none of the mock accounts match, show error
+      setError('Invalid username or password');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(t('errors.login_failed'));
     } finally {
       setLoading(false);
     }
   };
-
-  const handleRegisterClick = (e) => {
-    e.preventDefault();
-    navigate('/register');
-  };
-
+  
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: 'calc(100vh - 120px)' 
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '80vh'
       }}
     >
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          p: 4, 
-          width: '100%', 
-          maxWidth: 400,
-          mx: 2
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          width: '100%',
+          maxWidth: 400
         }}
       >
         <Typography variant="h4" component="h1" align="center" gutterBottom>
@@ -118,36 +115,51 @@ const Login = () => {
           </Alert>
         )}
         
-        <form onSubmit={handleSubmit}>
+        <Box component="form" onSubmit={handleSubmit}>
           <TextField
+            fullWidth
             label={t('auth.username')}
             variant="outlined"
-            fullWidth
             margin="normal"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            required
-            autoFocus
             disabled={loading}
           />
           
           <TextField
+            fullWidth
             label={t('auth.password')}
             type="password"
             variant="outlined"
-            fullWidth
             margin="normal"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
             disabled={loading}
           />
           
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <FormControlLabel
+              control={
+                <Checkbox 
+                  checked={rememberMe} 
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  color="primary"
+                  disabled={loading}
+                />
+              }
+              label={t('auth.remember_me')}
+            />
+            
+            <Link component="button" variant="body2" onClick={() => alert('Password reset functionality')}>
+              {t('auth.forgot_password')}
+            </Link>
+          </Box>
+          
           <Button
             type="submit"
+            fullWidth
             variant="contained"
             color="primary"
-            fullWidth
             size="large"
             sx={{ mt: 3, mb: 2 }}
             disabled={loading}
@@ -155,22 +167,32 @@ const Login = () => {
             {loading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              t('auth.login_title')
+              t('auth.sign_in')
             )}
           </Button>
-        </form>
-        
-        <Typography variant="body2" align="center">
-          {t('auth.no_account')}{' '}
-          <Button
-            onClick={handleRegisterClick}
-            color="primary"
-            sx={{ p: 0, minWidth: 'auto', textTransform: 'none' }}
-            disabled={loading}
-          >
-            {t('auth.sign_up')}
-          </Button>
-        </Typography>
+          
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Typography variant="body2">
+              {t('auth.no_account')}{' '}
+              <Link component={RouterLink} to="/register" variant="body2">
+                {t('auth.sign_up')}
+              </Link>
+            </Typography>
+          </Box>
+          
+          {/* Mock login info for demo purposes */}
+          <Box sx={{ mt: 4, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Demo Accounts:
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Instructor:</strong> username: instructor / password: instructor123
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Student:</strong> username: student / password: student123
+            </Typography>
+          </Box>
+        </Box>
       </Paper>
     </Box>
   );

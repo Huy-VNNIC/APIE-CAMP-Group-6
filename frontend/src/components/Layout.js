@@ -1,240 +1,343 @@
-import React, { useContext, useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import { UserContext } from '../contexts/UserContext';
+import { useTranslation } from 'react-i18next';
 import {
   AppBar,
   Box,
   Toolbar,
-  Typography,
-  Button,
   IconButton,
-  Container,
+  Typography,
   Menu,
   MenuItem,
+  Container,
   Avatar,
-  Divider
+  Tooltip,
+  Divider,
+  Button,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Drawer,
+  useTheme
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { UserContext } from '../contexts/UserContext';
-import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from './LanguageSwitcher';
 
 // Icons
-import PersonIcon from '@mui/icons-material/Person';
-import CodeIcon from '@mui/icons-material/Code';
 import MenuIcon from '@mui/icons-material/Menu';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import CodeIcon from '@mui/icons-material/Code';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
+import LanguageIcon from '@mui/icons-material/Language';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import VideocamIcon from '@mui/icons-material/Videocam';
+
+const drawerWidth = 240;
 
 const Layout = ({ children }) => {
   const { t } = useTranslation();
-  const { user, isAuthenticated, logout } = useContext(UserContext);
+  const theme = useTheme();
+  const location = useLocation();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
+  const { user, isAuthenticated, logout, isInstructor } = useContext(UserContext);
   
-  const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [anchorElUser, setAnchorElUser] = useState(null);
+  const [anchorElLang, setAnchorElLang] = useState(null);
+  
+  const handleOpenUserMenu = (event) => {
+    setAnchorElUser(event.currentTarget);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
+  const handleCloseUserMenu = () => {
+    setAnchorElUser(null);
   };
   
-  const handleMobileMenu = (event) => {
-    setMobileMenuAnchor(event.currentTarget);
-  };
-  
-  const handleMobileMenuClose = () => {
-    setMobileMenuAnchor(null);
+  const handleOpenLangMenu = (event) => {
+    setAnchorElLang(event.currentTarget);
   };
 
+  const handleCloseLangMenu = () => {
+    setAnchorElLang(null);
+  };
+  
+  const handleDrawerToggle = () => {
+    setMobileDrawerOpen(!mobileDrawerOpen);
+  };
+  
   const handleLogout = () => {
+    handleCloseUserMenu();
     logout();
     navigate('/login');
-    handleClose();
   };
-
-  const navigateTo = (path) => {
-    navigate(path);
-    handleClose();
-    handleMobileMenuClose();
+  
+  const handleLanguageChange = (lang) => {
+    // Future implementation - change language
+    handleCloseLangMenu();
   };
-
+  
+  const pages = [
+    // For all authenticated users
+    { name: t('nav.dashboard'), path: '/', icon: <DashboardIcon />, auth: true },
+    { name: t('nav.courses'), path: '/courses', icon: <SchoolIcon />, auth: true },
+    { name: t('nav.assignments'), path: '/assignments', icon: <AssignmentIcon />, auth: true },
+    { name: t('nav.playground'), path: '/playground', icon: <CodeIcon />, auth: true },
+    { name: 'Live Sessions', path: '/live-sessions', icon: <VideocamIcon />, auth: true },
+    
+    // For instructor role only
+    { 
+      name: 'Instructor Dashboard', 
+      path: '/instructor', 
+      icon: <SupervisorAccountIcon />, 
+      auth: true, 
+      instructorOnly: true 
+    }
+  ];
+  
+  const filteredPages = pages.filter(page => {
+    if (!page.auth) return true;
+    if (isAuthenticated) {
+      // If page is instructor only, check if user is instructor
+      if (page.instructorOnly) {
+        return isInstructor && isInstructor();
+      }
+      return true;
+    }
+    return false;
+  });
+  
+  const drawerContent = (
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        {t('app.title')}
+      </Typography>
+      <Divider sx={{ mb: 2 }} />
+      <List>
+        {filteredPages.map((page) => (
+          <ListItem key={page.path} disablePadding>
+            <ListItemButton
+              component={RouterLink}
+              to={page.path}
+              selected={location.pathname === page.path}
+              onClick={() => setMobileDrawerOpen(false)}
+              sx={{
+                borderRadius: 1,
+                '&.Mui-selected': {
+                  bgcolor: 'primary.light',
+                  '&:hover': {
+                    bgcolor: 'primary.light',
+                  }
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                {page.icon}
+              </ListItemIcon>
+              <ListItemText primary={page.name} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+  
   return (
-    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            onClick={() => navigateTo('/')}
-            sx={{ mr: 2 }}
-          >
-            <CodeIcon />
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {t('app.title')}
-          </Typography>
-          
-          {/* Language Switcher */}
-          <LanguageSwitcher />
-          
-          {/* Desktop menu */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', ml: 2 }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: theme.zIndex.drawer + 1,
+          width: { md: `calc(100% - ${isAuthenticated ? drawerWidth : 0}px)` },
+          ml: { md: isAuthenticated ? `${drawerWidth}px` : 0 }
+        }}
+      >
+        <Container maxWidth="xl">
+          <Toolbar disableGutters>
             {isAuthenticated && (
-              <>
-                <Button 
-                  color="inherit" 
-                  onClick={() => navigateTo('/')}
-                  startIcon={<DashboardIcon />}
-                >
-                  {t('nav.dashboard')}
-                </Button>
-                <Button 
-                  color="inherit" 
-                  onClick={() => navigateTo('/courses')}
-                  startIcon={<SchoolIcon />}
-                >
-                  {t('nav.courses')}
-                </Button>
-                <Button 
-                  color="inherit" 
-                  onClick={() => navigateTo('/assignments')}
-                  startIcon={<AssignmentIcon />}
-                >
-                  {t('nav.assignments')}
-                </Button>
-                <Button 
-                  color="inherit" 
-                  onClick={() => navigateTo('/playground')}
-                  startIcon={<CodeIcon />}
-                >
-                  {t('nav.playground')}
-                </Button>
-              </>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ mr: 2, display: { md: 'none' } }}
+              >
+                <MenuIcon />
+              </IconButton>
             )}
             
-            {isAuthenticated ? (
-              <>
-                <IconButton
-                  size="large"
-                  aria-label="account of current user"
-                  aria-controls="menu-appbar"
-                  aria-haspopup="true"
-                  onClick={handleMenu}
-                  color="inherit"
-                  sx={{ ml: 1 }}
-                >
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-                    {user && user.username ? user.username.charAt(0).toUpperCase() : <PersonIcon />}
-                  </Avatar>
+            <Typography
+              variant="h6"
+              noWrap
+              component={RouterLink}
+              to="/"
+              sx={{
+                mr: 2,
+                display: { xs: 'flex' },
+                fontWeight: 700,
+                color: 'inherit',
+                textDecoration: 'none',
+              }}
+            >
+              {t('app.title')}
+            </Typography>
+            
+            <Box sx={{ flexGrow: 1 }} />
+            
+            <Box sx={{ display: 'flex' }}>
+              {/* Language selector */}
+              <Tooltip title="Change language">
+                <IconButton onClick={handleOpenLangMenu} sx={{ p: 0, mr: 2 }}>
+                  <LanguageIcon />
                 </IconButton>
-                <Menu
-                  id="menu-appbar"
-                  anchorEl={anchorEl}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                  }}
-                  keepMounted
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  open={Boolean(anchorEl)}
-                  onClose={handleClose}
-                >
-                  <MenuItem onClick={() => navigateTo('/profile')}>
-                    {t('common.profile')}
-                  </MenuItem>
-                  <Divider />
-                  <MenuItem onClick={handleLogout}>
-                    {t('common.logout')}
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
-              <>
-                <Button color="inherit" onClick={() => navigateTo('/login')}>
-                  {t('common.login')}
-                </Button>
-                <Button color="inherit" variant="outlined" onClick={() => navigateTo('/register')} sx={{ ml: 1 }}>
-                  {t('common.register')}
-                </Button>
-              </>
-            )}
-          </Box>
-          
-          {/* Mobile menu icon */}
-          <IconButton
-            color="inherit"
-            aria-label="menu"
-            onClick={handleMobileMenu}
-            sx={{ display: { xs: 'block', md: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          
-          {/* Mobile menu */}
-          <Menu
-            id="mobile-menu"
-            anchorEl={mobileMenuAnchor}
-            keepMounted
-            open={Boolean(mobileMenuAnchor)}
-            onClose={handleMobileMenuClose}
-          >
-            {isAuthenticated && (
-              <>
-                <MenuItem onClick={() => navigateTo('/')}>
-                  <DashboardIcon sx={{ mr: 1 }} />
-                  {t('nav.dashboard')}
+              </Tooltip>
+              <Menu
+                sx={{ mt: '45px' }}
+                id="menu-language"
+                anchorEl={anchorElLang}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorElLang)}
+                onClose={handleCloseLangMenu}
+              >
+                <MenuItem onClick={() => handleLanguageChange('vi')}>
+                  <Typography textAlign="center">Tiếng Việt</Typography>
                 </MenuItem>
-                <MenuItem onClick={() => navigateTo('/courses')}>
-                  <SchoolIcon sx={{ mr: 1 }} />
-                  {t('nav.courses')}
+                <MenuItem onClick={() => handleLanguageChange('en')}>
+                  <Typography textAlign="center">English</Typography>
                 </MenuItem>
-                <MenuItem onClick={() => navigateTo('/assignments')}>
-                  <AssignmentIcon sx={{ mr: 1 }} />
-                  {t('nav.assignments')}
-                </MenuItem>
-                <MenuItem onClick={() => navigateTo('/playground')}>
-                  <CodeIcon sx={{ mr: 1 }} />
-                  {t('nav.playground')}
-                </MenuItem>
-                <MenuItem onClick={() => navigateTo('/profile')}>
-                  <PersonIcon sx={{ mr: 1 }} />
-                  {t('common.profile')}
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleLogout}>
-                  {t('common.logout')}
-                </MenuItem>
-              </>
-            )}
+              </Menu>
             
-            {!isAuthenticated && (
-              <>
-                <MenuItem onClick={() => navigateTo('/login')}>
-                  {t('common.login')}
-                </MenuItem>
-                <MenuItem onClick={() => navigateTo('/register')}>
-                  {t('common.register')}
-                </MenuItem>
-              </>
-            )}
-          </Menu>
-        </Toolbar>
+              {isAuthenticated ? (
+                <>
+                  <Tooltip title="User settings">
+                    <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                      <Avatar alt={user?.username || 'User'}>
+                        {user?.username?.charAt(0).toUpperCase() || 'U'}
+                      </Avatar>
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    sx={{ mt: '45px' }}
+                    id="menu-appbar"
+                    anchorEl={anchorElUser}
+                    anchorOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    keepMounted
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    open={Boolean(anchorElUser)}
+                    onClose={handleCloseUserMenu}
+                  >
+                    <MenuItem onClick={() => {
+                      handleCloseUserMenu();
+                      navigate('/profile');
+                    }}>
+                      <ListItemIcon>
+                        <AccountCircleIcon fontSize="small" />
+                      </ListItemIcon>
+                      <Typography textAlign="center">{t('common.profile')}</Typography>
+                    </MenuItem>
+                    
+                    <Divider />
+                    
+                    <MenuItem onClick={handleLogout}>
+                      <ListItemIcon>
+                        <LogoutIcon fontSize="small" />
+                      </ListItemIcon>
+                      <Typography textAlign="center">{t('common.logout')}</Typography>
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <Box sx={{ display: 'flex' }}>
+                  <Button
+                    component={RouterLink}
+                    to="/login"
+                    sx={{ color: 'white', mr: 1 }}
+                  >
+                    {t('common.login')}
+                  </Button>
+                  <Button
+                    component={RouterLink}
+                    to="/register"
+                    variant="outlined"
+                    sx={{ color: 'white', borderColor: 'white' }}
+                  >
+                    {t('common.register')}
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          </Toolbar>
+        </Container>
       </AppBar>
       
-      <Container component="main" sx={{ flexGrow: 1, py: 3 }}>
-        {children}
-      </Container>
+      {isAuthenticated && (
+        <>
+          {/* Desktop drawer - permanent */}
+          <Drawer
+            variant="permanent"
+            open
+            sx={{
+              width: drawerWidth,
+              flexShrink: 0,
+              display: { xs: 'none', md: 'block' },
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                boxSizing: 'border-box',
+              },
+            }}
+          >
+            <Toolbar />
+            {drawerContent}
+          </Drawer>
+          
+          {/* Mobile drawer - temporary */}
+          <Drawer
+            variant="temporary"
+            open={mobileDrawerOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              display: { xs: 'block', md: 'none' },
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                boxSizing: 'border-box',
+              },
+            }}
+          >
+            {drawerContent}
+          </Drawer>
+        </>
+      )}
       
-      <Box component="footer" sx={{ p: 2, mt: 'auto', bgcolor: 'background.paper', borderTop: '1px solid #eaeaea' }}>
-        <Typography variant="body2" color="text.secondary" align="center">
-          &copy; {new Date().getFullYear()} Online Coding Platform. All rights reserved.
-        </Typography>
+      {/* Main content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { md: isAuthenticated ? `calc(100% - ${drawerWidth}px)` : '100%' },
+          ml: { md: isAuthenticated ? `${drawerWidth}px` : 0 },
+          pt: { xs: 8, md: 10 } // Add padding top to account for app bar
+        }}
+      >
+        {children}
       </Box>
     </Box>
   );
