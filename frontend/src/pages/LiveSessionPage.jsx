@@ -1,471 +1,369 @@
-import React, { useState, useContext, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Grid,
-  Paper,
-  Typography,
+import React, { useState, useEffect } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Button, 
+  Grid, 
+  CircularProgress,
+  Tabs,
+  Tab,
+  Divider,
   TextField,
-  Button,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+  AppBar,
+  Toolbar,
   List,
   ListItem,
   ListItemText,
   ListItemAvatar,
   Avatar,
-  Divider,
-  IconButton,
-  AppBar,
-  Toolbar,
-  Drawer,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Tooltip,
-  Badge,
-  Alert,
-  CircularProgress
+  ButtonGroup
 } from '@mui/material';
-import { LiveSessionContext } from '../contexts/LiveSessionContext';
-import { UserContext } from '../contexts/UserContext';
-import CodeEditor from '../components/CodeEditor';
+import { useParams, useNavigate } from 'react-router-dom';
 
 // Icons
 import SendIcon from '@mui/icons-material/Send';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PersonIcon from '@mui/icons-material/Person';
-import CloseIcon from '@mui/icons-material/Close';
-import ChatIcon from '@mui/icons-material/Chat';
-import PeopleIcon from '@mui/icons-material/People';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import HomeIcon from '@mui/icons-material/Home';
-
-const DRAWER_WIDTH = 320;
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 
 const LiveSessionPage = () => {
-  const { id: sessionId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    currentSession, 
-    participants, 
-    messages, 
-    sharedCode, 
-    codeExecutionResult,
-    leaveSession,
-    sendMessage,
-    updateSharedCode,
-    runCode,
-    error,
-    joinSession
-  } = useContext(LiveSessionContext);
-  const { user } = useContext(UserContext);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
-  const [newMessage, setNewMessage] = useState('');
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [activeDrawer, setActiveDrawer] = useState('chat'); // 'chat' or 'participants'
-  const messagesEndRef = useRef(null);
-  const [loading, setLoading] = useState(true);
-  const [localError, setLocalError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
+  const [code, setCode] = useState('// Start coding here...');
+  const [output, setOutput] = useState('');
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [isInstructor, setIsInstructor] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   
-  // Try to join the session on page load
   useEffect(() => {
-    const attemptJoinSession = async () => {
-      if (!currentSession && sessionId) {
+    // In a real app, you would fetch the session data from the server
+    const loadSession = async () => {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Get the joined session from localStorage
+      const joinedSession = localStorage.getItem('joinedSession');
+      
+      if (joinedSession) {
         try {
-          await joinSession(sessionId);
-          setLocalError(null);
-        } catch (err) {
-          console.error("Error joining session:", err);
-          setLocalError(err.message || "Failed to join the session");
-        } finally {
-          setLoading(false);
+          const sessionData = JSON.parse(joinedSession);
+          
+          // For demonstration, determine if the user is an instructor
+          // In a real app, this would be based on user role from authentication
+          setIsInstructor(sessionData.role === 'instructor');
+          
+          // For demo purposes, create a mock session based on the ID
+          setSession({
+            id: id,
+            title: `JavaScript Functions Workshop`,
+            instructorName: 'John Smith',
+            participantCount: 5,
+            startTime: new Date().toISOString()
+          });
+          
+          // Initialize with sample messages
+          setMessages([
+            {
+              id: 1,
+              sender: 'John Smith',
+              text: 'Welcome to the live session! Feel free to ask questions.',
+              timestamp: new Date(Date.now() - 5 * 60000).toISOString()
+            }
+          ]);
+          
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Error parsing joined session:", error);
+          navigate('/live-sessions');
         }
       } else {
-        setLoading(false);
+        // No saved session, redirect to live sessions page
+        navigate('/live-sessions');
       }
     };
     
-    attemptJoinSession();
-  }, [currentSession, sessionId, joinSession]);
+    loadSession();
+  }, [id, navigate]);
   
-  // Auto-scroll chat on new messages
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-  
-  const isInstructor = user?.role === 'instructor';
-  const isSessionInstructor = isInstructor && currentSession?.instructorId === user?.id;
-  
-  // Handle message send
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      sendMessage(newMessage.trim());
-      setNewMessage('');
-    }
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
   };
   
-  // Handle shared code update
-  const handleCodeChange = (value) => {
-    updateSharedCode(value);
+  const handleRunCode = () => {
+    // In a real app, this would send the code to the server for execution
+    // For demo purposes, we'll just simulate an output
+    setOutput(`Running your code...\n\n> console.log("Hello, world!");\nHello, world!\n\nExecution completed successfully.`);
   };
   
-  // Handle code language change
-  const handleLanguageChange = (e) => {
-    updateSharedCode(sharedCode.code, e.target.value);
+  const handleSendMessage = () => {
+    if (!message.trim()) return;
+    
+    // Add the message to the list
+    setMessages([
+      ...messages,
+      {
+        id: Date.now(),
+        sender: 'You',
+        text: message,
+        timestamp: new Date().toISOString()
+      }
+    ]);
+    
+    // Clear the input
+    setMessage('');
   };
   
-  // Handle ending the session (instructor only)
-  const handleEndSession = () => {
-    if (window.confirm('Are you sure you want to end this session?')) {
-      leaveSession();
-    }
+  const handleLeaveSession = () => {
+    // In a real app, you would notify the server that the user is leaving
+    // For demo purposes, we'll just clear local storage and navigate away
+    localStorage.removeItem('joinedSession');
+    navigate('/live-sessions');
   };
   
-  // Format timestamp for messages
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const handleToggleSharing = () => {
+    setIsSharing(!isSharing);
   };
   
-  if (loading) {
+  if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
         <CircularProgress />
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Loading session...
+        <Typography variant="h6" sx={{ ml: 2 }}>
+          Joining session...
         </Typography>
       </Box>
     );
   }
   
-  if (error || localError) {
+  if (!session) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error || localError}
-        </Alert>
-        <Button 
-          variant="contained" 
-          onClick={() => navigate('/live-sessions')}
-          startIcon={<HomeIcon />}
-        >
-          Return to Live Sessions
-        </Button>
+      <Box sx={{ p: 3 }}>
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h5" color="error" gutterBottom>
+            Session Not Found
+          </Typography>
+          <Typography variant="body1" paragraph>
+            The session you're trying to join doesn't exist or has ended.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => navigate('/live-sessions')}
+          >
+            Back to Live Sessions
+          </Button>
+        </Paper>
       </Box>
     );
   }
   
-  if (!currentSession) {
-    return (
-      <Box sx={{ textAlign: 'center', p: 5 }}>
-        <Typography variant="h5" gutterBottom>
-          Session not found or has ended
+  return (
+    <Box sx={{ p: 3 }}>
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5">
+            {session.title} {isInstructor && "(Instructor View)"}
+          </Typography>
+          
+          <Button 
+            variant="outlined" 
+            color="error" 
+            startIcon={<ExitToAppIcon />}
+            onClick={handleLeaveSession}
+          >
+            Leave Session
+          </Button>
+        </Box>
+        
+        <Typography variant="body2" color="text.secondary">
+          Instructor: {session.instructorName}
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          The session you're trying to join may have ended or doesn't exist.
-        </Typography>
-        <Button 
-          variant="contained" 
-          sx={{ mt: 2 }}
-          onClick={() => navigate('/live-sessions')}
-          startIcon={<HomeIcon />}
-        >
-          Return to Live Sessions
-        </Button>
-      </Box>
-    );
-  }
-  
-  const drawerContent = (
-    <>
-      <AppBar position="static">
-        <Toolbar variant="dense">
-          <Box sx={{ flexGrow: 1, display: 'flex' }}>
+      </Paper>
+      
+      <Paper sx={{ mb: 3 }}>
+        <Tabs value={activeTab} onChange={handleTabChange}>
+          <Tab label="Code Editor" />
+          <Tab label="Chat" />
+        </Tabs>
+      </Paper>
+      
+      {/* Code Editor Tab */}
+      <Box sx={{ display: activeTab === 0 ? 'block' : 'none' }}>
+        {isInstructor && (
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
             <Button 
-              color={activeDrawer === 'chat' ? 'secondary' : 'inherit'}
-              onClick={() => setActiveDrawer('chat')}
-              startIcon={<ChatIcon />}
+              variant={isSharing ? "contained" : "outlined"}
+              color={isSharing ? "success" : "primary"}
+              startIcon={isSharing ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+              onClick={handleToggleSharing}
             >
-              Chat
-            </Button>
-            <Button 
-              color={activeDrawer === 'participants' ? 'secondary' : 'inherit'}
-              onClick={() => setActiveDrawer('participants')}
-              startIcon={<PeopleIcon />}
-            >
-              People ({participants?.length || 0})
+              {isSharing ? "Stop Sharing Code" : "Share Code with Students"}
             </Button>
           </Box>
-          <IconButton 
-            color="inherit" 
-            edge="end"
-            onClick={() => setMobileDrawerOpen(false)}
-            sx={{ display: { sm: 'none' } }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+        )}
+        
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 2, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                {isInstructor ? 'Code Editor' : 'Shared Code'}
+              </Typography>
+              
+              <TextField
+                fullWidth
+                multiline
+                rows={15}
+                variant="outlined"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                disabled={!isInstructor}
+                sx={{ fontFamily: 'monospace' }}
+              />
+              
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={handleRunCode}
+                  startIcon={<PlayArrowIcon />}
+                  disabled={!isInstructor}
+                >
+                  Run Code
+                </Button>
+              </Box>
+            </Paper>
+            
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Output
+              </Typography>
+              
+              <Box sx={{ 
+                p: 2, 
+                bgcolor: 'black', 
+                color: 'white', 
+                borderRadius: 1,
+                fontFamily: 'monospace',
+                height: '200px',
+                overflow: 'auto'
+              }}>
+                <pre>{output || 'Run your code to see output here'}</pre>
+              </Box>
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ p: 2, height: '100%' }}>
+              <Typography variant="h6" gutterBottom>
+                Session Info
+              </Typography>
+              
+              <Divider sx={{ mb: 2 }} />
+              
+              <Typography variant="body2" paragraph>
+                <strong>Session ID:</strong> {session.id}
+              </Typography>
+              
+              <Typography variant="body2" paragraph>
+                <strong>Participants:</strong> {session.participantCount}
+              </Typography>
+              
+              <Typography variant="body2" paragraph>
+                <strong>Started:</strong> {new Date(session.startTime).toLocaleString()}
+              </Typography>
+              
+              {isInstructor && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Instructor Controls
+                  </Typography>
+                  <ButtonGroup variant="outlined" fullWidth>
+                    <Button 
+                      color={isSharing ? "success" : "primary"}
+                      onClick={handleToggleSharing}
+                    >
+                      {isSharing ? "Stop Sharing" : "Share Code"}
+                    </Button>
+                    <Button color="error">
+                      End Session
+                    </Button>
+                  </ButtonGroup>
+                </Box>
+              )}
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
       
-      {activeDrawer === 'chat' ? (
-        <>
-          <List sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
-            {messages && messages.length > 0 ? (
-              messages.map((msg, index) => (
-                <ListItem key={index} alignItems="flex-start" sx={{ p: 1 }}>
+      {/* Chat Tab */}
+      <Box sx={{ display: activeTab === 1 ? 'block' : 'none' }}>
+        <Paper sx={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
+            <List>
+              {messages.map((msg) => (
+                <ListItem key={msg.id} alignItems="flex-start">
                   <ListItemAvatar>
                     <Avatar>
-                      {(msg.fullName || msg.username) ? 
-                        (msg.fullName || msg.username).charAt(0).toUpperCase() : 'U'}
+                      {msg.sender.charAt(0)}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Box component="span">
-                          {msg.fullName || msg.username}
-                          {msg.role === 'instructor' && (
-                            <Chip 
-                              label="Instructor" 
-                              size="small" 
-                              color="primary" 
-                              sx={{ ml: 1 }}
-                            />
-                          )}
-                        </Box>
+                        <Typography variant="subtitle2">
+                          {msg.sender}
+                        </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {formatTime(msg.timestamp)}
+                          {new Date(msg.timestamp).toLocaleTimeString()}
                         </Typography>
                       </Box>
                     }
-                    secondary={<Typography variant="body2">{msg.message}</Typography>}
+                    secondary={msg.text}
                   />
                 </ListItem>
-              ))
-            ) : (
-              <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Typography color="text.secondary">
-                  No messages yet. Start the conversation!
-                </Typography>
-              </Box>
-            )}
-            <div ref={messagesEndRef} />
-          </List>
+              ))}
+            </List>
+          </Box>
           
           <Divider />
           
-          <Box component="form" onSubmit={handleSendMessage} sx={{ p: 2 }}>
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
             <TextField
               fullWidth
               variant="outlined"
               placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <IconButton 
-                    color="primary" 
-                    edge="end" 
-                    type="submit"
-                    disabled={!newMessage.trim()}
-                  >
-                    <SendIcon />
-                  </IconButton>
-                )
+              size="small"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleSendMessage();
+                }
               }}
             />
-          </Box>
-        </>
-      ) : (
-        <List>
-          {participants && participants.length > 0 ? (
-            participants.map((participant, index) => (
-              <React.Fragment key={participant.id || index}>
-                <ListItem>
-                  <ListItemAvatar>
-                    <Avatar>
-                      {(participant.fullName || participant.username) ? 
-                        (participant.fullName || participant.username).charAt(0).toUpperCase() : 'U'}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={participant.fullName || participant.username}
-                    secondary={participant.role === 'instructor' ? 'Instructor' : 'Student'}
-                  />
-                </ListItem>
-                {index < participants.length - 1 && <Divider />}
-              </React.Fragment>
-            ))
-          ) : (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Typography color="text.secondary">
-                No participants found.
-              </Typography>
-            </Box>
-          )}
-        </List>
-      )}
-    </>
-  );
-  
-  return (
-    <Box sx={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
-      {/* Session Header */}
-      <AppBar position="static" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            {currentSession.title}
-          </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title="Participants">
-              <Badge 
-                badgeContent={participants?.length || 0} 
-                color="primary" 
-                sx={{ mr: 1 }}
-              >
-                <IconButton
-                  color="inherit"
-                  onClick={() => {
-                    setActiveDrawer('participants');
-                    setMobileDrawerOpen(true);
-                  }}
-                >
-                  <PeopleIcon />
-                </IconButton>
-              </Badge>
-            </Tooltip>
-            
-            <Tooltip title="Chat">
-              <IconButton
-                color="inherit"
-                onClick={() => {
-                  setActiveDrawer('chat');
-                  setMobileDrawerOpen(true);
-                }}
-                sx={{ display: { sm: 'none' } }}
-              >
-                <ChatIcon />
-              </IconButton>
-            </Tooltip>
-            
-            {isSessionInstructor ? (
-              <Button
-                variant="contained"
-                color="error"
-                onClick={handleEndSession}
-                startIcon={<ExitToAppIcon />}
-              >
-                End Session
-              </Button>
-            ) : (
-              <Button
-                variant="outlined"
-                onClick={() => leaveSession()}
-                startIcon={<ExitToAppIcon />}
-              >
-                Leave
-              </Button>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
-      
-      {/* Main Content */}
-      <Grid container sx={{ flexGrow: 1, overflow: 'hidden' }}>
-        {/* Editor Side */}
-        <Grid item xs={12} sm={8} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderBottom: 1, borderColor: 'divider' }}>
-            <FormControl variant="outlined" size="small" sx={{ minWidth: 150, mr: 2 }}>
-              <InputLabel>Language</InputLabel>
-              <Select
-                value={sharedCode?.language || 'javascript'}
-                onChange={handleLanguageChange}
-                label="Language"
-                disabled={!isSessionInstructor}
-              >
-                <MenuItem value="javascript">JavaScript</MenuItem>
-                <MenuItem value="python">Python</MenuItem>
-                <MenuItem value="java">Java</MenuItem>
-                <MenuItem value="csharp">C#</MenuItem>
-                <MenuItem value="cpp">C++</MenuItem>
-              </Select>
-            </FormControl>
-            
-            <Button
-              variant="contained"
+            <IconButton 
               color="primary"
-              startIcon={<PlayArrowIcon />}
-              onClick={runCode}
+              onClick={handleSendMessage}
+              disabled={!message.trim()}
+              sx={{ ml: 1 }}
             >
-              Run Code
-            </Button>
-            
-            {!isSessionInstructor && (
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                Instructor controls the language selection
-              </Typography>
-            )}
+              <SendIcon />
+            </IconButton>
           </Box>
-          
-          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-            <CodeEditor
-              code={sharedCode?.code || '// Start coding here\n'}
-              language={sharedCode?.language || 'javascript'}
-              onChange={handleCodeChange}
-              readOnly={!isSessionInstructor}
-            />
-          </Box>
-          
-          {/* Code execution results */}
-          {codeExecutionResult && (
-            <Paper 
-              sx={{ 
-                p: 2, 
-                m: 1, 
-                maxHeight: 150, 
-                overflow: 'auto',
-                bgcolor: codeExecutionResult.success ? 'success.50' : 'error.50',
-                border: 1,
-                borderColor: codeExecutionResult.success ? 'success.main' : 'error.main'
-              }}
-            >
-              <Typography variant="subtitle2" gutterBottom>
-                Execution Results:
-              </Typography>
-              <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
-                {codeExecutionResult.output}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Execution time: {codeExecutionResult.executionTime}ms
-              </Typography>
-            </Paper>
-          )}
-        </Grid>
-        
-        {/* Chat/Participants Side - visible on desktop, drawer on mobile */}
-        <Grid item sm={4} sx={{ display: { xs: 'none', sm: 'flex' }, height: '100%', borderLeft: 1, borderColor: 'divider' }}>
-          <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {drawerContent}
-          </Box>
-        </Grid>
-        
-        {/* Mobile Drawer */}
-        <Drawer
-          anchor="right"
-          open={mobileDrawerOpen}
-          onClose={() => setMobileDrawerOpen(false)}
-          sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
-        >
-          <Box sx={{ width: DRAWER_WIDTH, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {drawerContent}
-          </Box>
-        </Drawer>
-      </Grid>
+        </Paper>
+      </Box>
     </Box>
   );
 };

@@ -1,21 +1,25 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
   Button, 
   Paper,
-  Grid,
-  Divider,
   Tab,
-  Tabs
+  Tabs,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Divider,
+  Chip
 } from '@mui/material';
-import { UserContext } from '../contexts/UserContext';
-import LiveSessionsList from '../components/LiveSessionsList';
-import CreateSessionDialog from '../components/CreateSessionDialog';
+import { useNavigate } from 'react-router-dom';
+import AddIcon from '@mui/icons-material/Add';
+import PersonIcon from '@mui/icons-material/Person';
+import LockIcon from '@mui/icons-material/Lock';
 
-// Icons
-import VideocamIcon from '@mui/icons-material/Videocam';
-import HistoryIcon from '@mui/icons-material/History';
+import CreateSessionDialog from '../components/CreateSessionDialog';
+import SessionShareDialog from '../components/SessionShareDialog';
 
 // Sample course data
 const courses = [
@@ -25,78 +29,113 @@ const courses = [
   { id: '4', title: 'Node.js & Express' }
 ];
 
-// Sample past sessions
-const pastSessions = [
+// Mock data for sessions
+const initialSessions = [
   {
-    id: "1",
-    title: "JavaScript Event Loop Deep Dive",
-    instructorName: "John Smith",
-    courseName: "JavaScript Fundamentals",
-    startTime: "2023-05-15T14:00:00Z",
-    endTime: "2023-05-15T15:30:00Z",
-    participantCount: 24,
-    recordingUrl: "https://example.com/recordings/js-event-loop"
+    id: 'session-abc123',
+    title: 'JavaScript Fundamentals',
+    courseId: '1',
+    instructorName: 'John Smith',
+    participantCount: 3,
+    startTime: new Date().toISOString(),
+    hasPassword: true,
+    password: 'demo123'
   },
   {
-    id: "2",
-    title: "Building React Hooks from Scratch",
-    instructorName: "John Smith",
-    courseName: "Advanced React",
-    startTime: "2023-05-18T13:00:00Z",
-    endTime: "2023-05-18T14:15:00Z",
-    participantCount: 18,
-    recordingUrl: "https://example.com/recordings/react-hooks"
+    id: 'session-def456',
+    title: 'React Hooks Deep Dive',
+    courseId: '3',
+    instructorName: 'Sarah Johnson',
+    participantCount: 5,
+    startTime: new Date(Date.now() - 30 * 60000).toISOString(),
+    hasPassword: false
   }
 ];
 
-// Format date for display
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
-// Format time for display
-const formatTime = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
 const LiveSessionsPage = () => {
-  const { user } = useContext(UserContext);
-  const [createSessionOpen, setCreateSessionOpen] = useState(false);
-  const [tabValue, setTabValue] = useState(0);
+  const navigate = useNavigate();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [sessions, setSessions] = useState(initialSessions);
+  const [activeTab, setActiveTab] = useState(0);
   
-  const isInstructor = user?.role === 'instructor';
-  
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  // For demo purposes, assume we're the instructor named "John Smith"
+  const user = { 
+    role: 'instructor', 
+    username: 'instructor',
+    fullName: 'John Smith' 
   };
   
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+  
+  const handleCreateSession = () => {
+    setCreateDialogOpen(true);
+  };
+  
+  const handleSessionCreated = (newSession) => {
+    // Add the new session to our list
+    setSessions([...sessions, {
+      ...newSession,
+      participantCount: 1,
+      startTime: new Date().toISOString(),
+      instructorName: user.fullName
+    }]);
+    
+    setCreateDialogOpen(false);
+    setSelectedSession(newSession);
+    setShareDialogOpen(true);
+  };
+  
+  const handleJoinSession = (sessionId) => {
+    const session = sessions.find(s => s.id === sessionId);
+    
+    if (session) {
+      // Store the session info in localStorage
+      localStorage.setItem('joinedSession', JSON.stringify({
+        id: sessionId,
+        password: session.password,
+        joinedAt: new Date().toISOString()
+      }));
+      
+      // Navigate to the session page
+      navigate(`/live-session/${sessionId}`);
+    }
+  };
+  
+  // Format time display
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  
+  // Filter sessions relevant to the current user
+  const userSessions = sessions.filter(
+    session => user.role === 'instructor' ? 
+      session.instructorName === user.fullName : 
+      true
+  );
+  
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
-        alignItems: 'center',
-        mb: 3
+        alignItems: 'center', 
+        mb: 3 
       }}>
         <Typography variant="h4" component="h1">
           Live Sessions
         </Typography>
         
-        {isInstructor && (
+        {user.role === 'instructor' && (
           <Button
             variant="contained"
             color="primary"
-            startIcon={<VideocamIcon />}
-            onClick={() => setCreateSessionOpen(true)}
+            startIcon={<AddIcon />}
+            onClick={handleCreateSession}
           >
             Start New Session
           </Button>
@@ -104,76 +143,160 @@ const LiveSessionsPage = () => {
       </Box>
       
       <Paper sx={{ mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="session tabs">
-          <Tab icon={<VideocamIcon />} iconPosition="start" label="Active Sessions" />
-          <Tab icon={<HistoryIcon />} iconPosition="start" label="Past Sessions" />
+        <Tabs value={activeTab} onChange={handleTabChange}>
+          <Tab label="All Sessions" />
+          {user.role === 'instructor' && <Tab label="My Sessions" />}
         </Tabs>
       </Paper>
       
-      <Box sx={{ display: tabValue === 0 ? 'block' : 'none' }}>
-        <LiveSessionsList />
-      </Box>
-      
-      <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
-        {pastSessions.length > 0 ? (
+      {/* All Sessions Tab */}
+      <Box sx={{ display: activeTab === 0 ? 'block' : 'none' }}>
+        {sessions.length === 0 ? (
+          <Paper sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body1" color="text.secondary">
+              No active sessions found.
+            </Typography>
+          </Paper>
+        ) : (
           <Grid container spacing={3}>
-            {pastSessions.map(session => (
+            {sessions.map(session => (
               <Grid item xs={12} md={6} lg={4} key={session.id}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    {session.title}
-                  </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Instructor: {session.instructorName}
-                  </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Course: {session.courseName}
-                  </Typography>
-                  
-                  <Divider sx={{ my: 1 }} />
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">
-                      Date: {formatDate(session.startTime)}
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" noWrap>
+                      {session.title}
+                      {session.hasPassword && (
+                        <LockIcon fontSize="small" color="action" sx={{ ml: 1, verticalAlign: 'middle' }} />
+                      )}
                     </Typography>
-                    <Typography variant="body2">
-                      Time: {formatTime(session.startTime)} - {formatTime(session.endTime)}
+                    
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Instructor: {session.instructorName}
                     </Typography>
-                  </Box>
+                    
+                    <Divider sx={{ my: 1 }} />
+                    
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Chip 
+                        icon={<PersonIcon />}
+                        label={`${session.participantCount} participants`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                      
+                      <Typography variant="caption" color="text.secondary">
+                        Started at {formatTime(session.startTime)}
+                      </Typography>
+                    </Box>
+                  </CardContent>
                   
-                  <Typography variant="body2" gutterBottom>
-                    Participants: {session.participantCount}
-                  </Typography>
-                  
-                  <Box sx={{ mt: 2 }}>
+                  <CardActions>
                     <Button 
-                      variant="outlined" 
+                      variant="contained" 
+                      color="primary"
                       fullWidth
-                      disabled={!session.recordingUrl}
+                      onClick={() => handleJoinSession(session.id)}
                     >
-                      {session.recordingUrl ? 'View Recording' : 'No Recording Available'}
+                      Join Session
                     </Button>
-                  </Box>
-                </Paper>
+                  </CardActions>
+                </Card>
               </Grid>
             ))}
           </Grid>
-        ) : (
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography color="text.secondary">
-              No past sessions found.
-            </Typography>
-          </Paper>
         )}
       </Box>
       
+      {/* My Sessions Tab (for instructors) */}
+      {user.role === 'instructor' && (
+        <Box sx={{ display: activeTab === 1 ? 'block' : 'none' }}>
+          {userSessions.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1" color="text.secondary">
+                You haven't created any sessions yet. Click "Start New Session" to create one.
+              </Typography>
+            </Paper>
+          ) : (
+            <Grid container spacing={3}>
+              {userSessions.map(session => (
+                <Grid item xs={12} md={6} lg={4} key={session.id}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" noWrap>
+                        {session.title}
+                        {session.hasPassword && (
+                          <LockIcon fontSize="small" color="action" sx={{ ml: 1, verticalAlign: 'middle' }} />
+                        )}
+                      </Typography>
+                      
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        {courses.find(c => c.id === session.courseId)?.title || 'Unknown Course'}
+                      </Typography>
+                      
+                      <Divider sx={{ my: 1 }} />
+                      
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Chip 
+                          icon={<PersonIcon />}
+                          label={`${session.participantCount} participants`}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                        
+                        <Typography variant="caption" color="text.secondary">
+                          Started at {formatTime(session.startTime)}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                    
+                    <CardActions sx={{ display: 'flex', gap: 1 }}>
+                      <Button 
+                        variant="contained" 
+                        color="primary"
+                        fullWidth
+                        onClick={() => handleJoinSession(session.id)}
+                      >
+                        Join Session
+                      </Button>
+                      
+                      <Button 
+                        variant="outlined"
+                        onClick={() => {
+                          setSelectedSession(session);
+                          setShareDialogOpen(true);
+                        }}
+                      >
+                        Share
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+      
+      {/* Create Session Dialog */}
       <CreateSessionDialog
-        open={createSessionOpen}
-        onClose={() => setCreateSessionOpen(false)}
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSessionCreated={handleSessionCreated}
         courses={courses}
       />
+      
+      {/* Share Session Dialog */}
+      {selectedSession && (
+        <SessionShareDialog
+          open={shareDialogOpen}
+          onClose={() => setShareDialogOpen(false)}
+          sessionId={selectedSession.id}
+          password={selectedSession.password}
+          title={selectedSession.title}
+        />
+      )}
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -10,119 +10,255 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText,
-  CircularProgress
+  FormControlLabel,
+  Checkbox,
+  Stack,
+  Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography
 } from '@mui/material';
-import { LiveSessionContext } from '../contexts/LiveSessionContext';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-const CreateSessionDialog = ({ open, onClose, courses }) => {
-  const { createSession, isConnecting } = useContext(LiveSessionContext);
+const CreateSessionDialog = ({ open, onClose, onSessionCreated, courses = [] }) => {
   const [formData, setFormData] = useState({
     title: '',
+    courseId: '',
+    usePassword: false,
+    password: '',
     description: '',
-    courseId: ''
+    customId: false,
+    sessionId: ''
   });
-  const [errors, setErrors] = useState({});
-
+  
+  const [localError, setLocalError] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when field is edited
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    const { name, value, checked, type } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value
+    });
   };
-
-  const validate = () => {
-    const newErrors = {};
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLocalError('');
     
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+    if (!formData.title) {
+      setLocalError('Session title is required');
+      return;
     }
     
     if (!formData.courseId) {
-      newErrors.courseId = 'Please select a course';
+      setLocalError('Please select a course');
+      return;
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) return;
+    setIsCreating(true);
     
     try {
-      await createSession(formData);
-      // The context will handle navigation on success
-    } catch (error) {
-      console.error('Error creating session:', error);
-      // Show error to user
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const newSession = {
+        id: formData.customId && formData.sessionId ? 
+          formData.sessionId : 
+          `session-${Date.now().toString(36)}`,
+        title: formData.title,
+        courseId: formData.courseId,
+        description: formData.description,
+        password: formData.usePassword ? formData.password : null,
+        hasPassword: formData.usePassword && !!formData.password,
+        participantCount: 1,
+        startTime: new Date().toISOString()
+      };
+      
+      if (onSessionCreated) {
+        onSessionCreated(newSession);
+      } else {
+        handleClose();
+      }
+    } catch (err) {
+      setLocalError('Error creating session');
+    } finally {
+      setIsCreating(false);
     }
   };
-
+  
+  const handleClose = () => {
+    // Reset form
+    setFormData({
+      title: '',
+      courseId: '',
+      usePassword: false,
+      password: '',
+      description: '',
+      customId: false,
+      sessionId: ''
+    });
+    setLocalError('');
+    setExpanded(false);
+    onClose();
+  };
+  
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 6; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData({
+      ...formData,
+      password,
+      usePassword: true
+    });
+  };
+  
+  const generateSessionId = () => {
+    setFormData({
+      ...formData,
+      sessionId: `session-${Date.now().toString(36)}`,
+      customId: true
+    });
+  };
+  
   return (
-    <Dialog open={open} onClose={isConnecting ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Start a New Live Session</DialogTitle>
       
       <DialogContent>
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Session Title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          error={!!errors.title}
-          helperText={errors.title}
-          disabled={isConnecting}
-          required
-        />
+        {localError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {localError}
+          </Alert>
+        )}
         
-        <FormControl fullWidth margin="normal" error={!!errors.courseId} disabled={isConnecting} required>
-          <InputLabel>Course</InputLabel>
-          <Select
-            name="courseId"
-            value={formData.courseId}
+        <form onSubmit={handleSubmit}>
+          <TextField
+            name="title"
+            label="Session Title"
+            fullWidth
+            margin="normal"
+            value={formData.title}
             onChange={handleChange}
-            label="Course"
+            required
+            autoFocus
+          />
+          
+          <FormControl fullWidth margin="normal" required>
+            <InputLabel>Course</InputLabel>
+            <Select
+              name="courseId"
+              value={formData.courseId}
+              onChange={handleChange}
+              label="Course"
+            >
+              {courses.map(course => (
+                <MenuItem key={course.id} value={course.id}>
+                  {course.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <TextField
+            name="description"
+            label="Description (optional)"
+            fullWidth
+            margin="normal"
+            value={formData.description}
+            onChange={handleChange}
+            multiline
+            rows={3}
+          />
+          
+          <Accordion 
+            expanded={expanded} 
+            onChange={() => setExpanded(!expanded)}
+            sx={{ mt: 2, mb: 1 }}
           >
-            {courses.map(course => (
-              <MenuItem key={course.id} value={course.id}>
-                {course.title}
-              </MenuItem>
-            ))}
-          </Select>
-          {errors.courseId && <FormHelperText>{errors.courseId}</FormHelperText>}
-        </FormControl>
-        
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Description (optional)"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          multiline
-          rows={3}
-          disabled={isConnecting}
-        />
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography>Advanced Settings</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="usePassword"
+                    checked={formData.usePassword}
+                    onChange={handleChange}
+                  />
+                }
+                label="Password Protected"
+              />
+              
+              {formData.usePassword && (
+                <Stack direction="row" spacing={2} sx={{ mt: 1, mb: 2 }}>
+                  <TextField
+                    name="password"
+                    label="Password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    fullWidth
+                  />
+                  <Button 
+                    variant="outlined" 
+                    onClick={generatePassword}
+                    size="small"
+                  >
+                    Generate
+                  </Button>
+                </Stack>
+              )}
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="customId"
+                    checked={formData.customId}
+                    onChange={handleChange}
+                  />
+                }
+                label="Custom Session ID"
+              />
+              
+              {formData.customId && (
+                <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+                  <TextField
+                    name="sessionId"
+                    label="Session ID"
+                    value={formData.sessionId}
+                    onChange={handleChange}
+                    fullWidth
+                    helperText="A unique identifier for this session"
+                  />
+                  <Button 
+                    variant="outlined" 
+                    onClick={generateSessionId}
+                    size="small"
+                  >
+                    Generate
+                  </Button>
+                </Stack>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        </form>
       </DialogContent>
       
       <DialogActions>
-        <Button onClick={onClose} disabled={isConnecting}>
-          Cancel
-        </Button>
+        <Button onClick={handleClose}>Cancel</Button>
         <Button 
+          onClick={handleSubmit} 
           variant="contained" 
-          color="primary" 
-          onClick={handleSubmit}
-          disabled={isConnecting}
-          startIcon={isConnecting ? <CircularProgress size={20} /> : null}
+          color="primary"
+          disabled={isCreating}
         >
-          {isConnecting ? 'Starting...' : 'Start Session'}
+          {isCreating ? 'Creating...' : 'Create Session'}
         </Button>
       </DialogActions>
     </Dialog>
