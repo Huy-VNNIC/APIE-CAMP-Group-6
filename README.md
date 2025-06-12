@@ -1,57 +1,70 @@
-Copilot said: # Online Coding Platform A comprehensive online programming
-Online Coding Platform
+# Online Coding Platform
+
 A comprehensive online programming learning platform with interactive learning features, exercises, assessments, and live coding sessions.
 
-🏗️ System Architecture
+## 🏗️ System Architecture
+
 The platform is built on a distributed architecture across two VPS servers:
 
-VPS 1 (202.249.25.210): oncode - Web Server (Node.js, Express, React)
-VPS 2 (202.249.25.211): oncodedb - Database Server (PostgreSQL in Docker)
-👥 User Roles & Permissions
-1. Student
-Register for courses and learning paths
-Access learning materials and documentation
-Complete coding exercises and assignments
-Submit code solutions for evaluation
-Participate in live coding sessions
-Track personal learning progress
-Take quizzes and assessments
-2. Instructor
-Create and manage courses
-Develop learning materials and curricula
-Design coding exercises and projects
-Create quizzes and assessments
-Host live coding sessions
-Monitor student progress and performance
-Provide feedback and grading
-3. Support
-Handle user support requests
-Resolve technical issues
-Answer student and instructor queries
-Manage platform documentation
-Assist with account management
-4. Marketing
-Create marketing campaigns
-Manage promotional content
-Analyze user engagement metrics
-Develop outreach strategies
-Handle partnerships and collaborations
-5. Developer
-System administration and maintenance
-Implement CI/CD pipelines
-Database management and optimization
-Security updates and monitoring
-Performance optimization
-Feature development and bug fixes
-🚀 Installation & Setup
-Prerequisites
-Node.js (v16+ recommended)
-Docker and Docker Compose
-Git
-SSH access to both VPS servers
-VPS 2 - Database Server Setup (oncodedb)
-1. Initial Server Setup
-bash
+- **VPS 1 (202.249.25.210)**: `oncode` - Web Server (Node.js, Express, React)
+- **VPS 2 (202.249.25.211)**: `oncodedb` - Database Server (PostgreSQL in Docker)
+
+## 👥 User Roles & Permissions
+
+### 1. **Student**
+- Register for courses and learning paths
+- Access learning materials and documentation
+- Complete coding exercises and assignments
+- Submit code solutions for evaluation
+- Participate in live coding sessions
+- Track personal learning progress
+- Take quizzes and assessments
+
+### 2. **Instructor**
+- Create and manage courses
+- Develop learning materials and curricula
+- Design coding exercises and projects
+- Create quizzes and assessments
+- Host live coding sessions
+- Monitor student progress and performance
+- Provide feedback and grading
+
+### 3. **Support**
+- Handle user support requests
+- Resolve technical issues
+- Answer student and instructor queries
+- Manage platform documentation
+- Assist with account management
+
+### 4. **Marketing**
+- Create marketing campaigns
+- Manage promotional content
+- Analyze user engagement metrics
+- Develop outreach strategies
+- Handle partnerships and collaborations
+
+### 5. **Developer**
+- System administration and maintenance
+- Implement CI/CD pipelines
+- Database management and optimization
+- Security updates and monitoring
+- Performance optimization
+- Feature development and bug fixes
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+
+- **Node.js** (v16+ recommended)
+- **Docker** and **Docker Compose**
+- **Git**
+- **SSH** access to both VPS servers
+
+### VPS 2 - Database Server Setup (oncodedb)
+
+#### 1. Initial Server Setup
+
+```bash
 # Connect to VPS 2
 ssh root@202.249.25.211
 
@@ -69,8 +82,11 @@ sudo chmod +x /usr/local/bin/docker-compose
 # Create workspace directory
 mkdir -p ~/Huy-workspace/online-coding-platform
 cd ~/Huy-workspace/online-coding-platform
-2. Clone and Setup Database
-bash
+```
+
+#### 2. Clone and Setup Database
+
+```bash
 # Clone the repository
 git clone https://github.com/your-repo/online-coding-platform.git .
 
@@ -83,16 +99,20 @@ mkdir -p data config init logs backups
 # Set proper permissions
 sudo chown -R $USER:$USER data logs backups
 chmod 755 config init
-3. Database Configuration
-bash
+```
+
+#### 3. Database Configuration
+
+```bash
 # Copy environment template
 cp .env.example .env
 
 # Edit environment variables
 nano .env
-Example .env file:
+```
 
-env
+**Example .env file:**
+```env
 POSTGRES_DB=online_coding_platform
 POSTGRES_USER=oncode_admin
 POSTGRES_PASSWORD=your_secure_password_here
@@ -107,8 +127,11 @@ BACKUP_RETENTION_DAYS=30
 POSTGRES_LOG_LEVEL=INFO
 MAX_CONNECTIONS=200
 SHARED_BUFFERS=256MB
-4. Start Database Services
-bash
+```
+
+#### 4. Start Database Services
+
+```bash
 # Start PostgreSQL container
 docker-compose up -d
 
@@ -120,8 +143,11 @@ docker-compose logs -f postgres
 
 # Test database connection
 ./test-connection.sh
-5. Database Initialization
-bash
+```
+
+#### 5. Database Initialization
+
+```bash
 # Run initial database setup
 docker-compose exec postgres psql -U oncode_admin -d online_coding_platform -f /docker-entrypoint-initdb.d/01-init-schema.sql
 
@@ -130,9 +156,13 @@ docker-compose exec postgres psql -U oncode_admin -d online_coding_platform -f /
 
 # Verify tables were created
 docker-compose exec postgres psql -U oncode_admin -d online_coding_platform -c "\dt"
-VPS 1 - Web Server Setup (oncode)
-1. Initial Server Setup
-bash
+```
+
+### VPS 1 - Web Server Setup (oncode)
+
+#### 1. Initial Server Setup
+
+```bash
 # Connect to VPS 1
 ssh root@202.249.25.210
 
@@ -149,8 +179,11 @@ sudo npm install -g pm2
 # Create workspace directory
 mkdir -p ~/Huy-workspace/online-coding-platform
 cd ~/Huy-workspace/online-coding-platform
-2. Clone and Setup Web Server
-bash
+```
+
+#### 2. Clone and Setup Web Server
+
+```bash
 # Clone the repository
 git clone https://github.com/your-repo/online-coding-platform.git .
 
@@ -162,16 +195,20 @@ npm install
 
 # Install development dependencies (if needed)
 npm install --only=dev
-3. Environment Configuration
-bash
+```
+
+#### 3. Environment Configuration
+
+```bash
 # Copy environment template
 cp .env.example .env
 
 # Edit environment variables
 nano .env
-Example .env file:
+```
 
-env
+**Example .env file:**
+```env
 # Server Configuration
 NODE_ENV=production
 PORT=3000
@@ -224,8 +261,11 @@ CORS_ORIGIN=https://your-domain.com
 LOG_LEVEL=info
 LOG_MAX_FILES=5
 LOG_MAX_SIZE=20m
-4. Database Connection Test
-bash
+```
+
+#### 4. Database Connection Test
+
+```bash
 # Test database connectivity
 node src/test-db-connection.js
 
@@ -233,8 +273,11 @@ node src/test-db-connection.js
 # ✅ Database connection successful
 # ✅ All required tables exist
 # 📊 Database statistics: X tables, Y total records
-5. Build and Start Application
-bash
+```
+
+#### 5. Build and Start Application
+
+```bash
 # Build the React frontend
 npm run build
 
@@ -252,8 +295,11 @@ pm2 logs online-coding-platform
 
 # Monitor application
 pm2 monit
-📁 Detailed Directory Structure
-Code
+```
+
+## 📁 Detailed Directory Structure
+
+```
 Huy-workspace/online-coding-platform/
 ├── README.md
 ├── .gitignore
@@ -398,9 +444,13 @@ Huy-workspace/online-coding-platform/
     ├── babel.config.js              # Babel configuration
     ├── eslint.config.js             # ESLint configuration
     └── pm2.config.js                # PM2 configuration
-🚀 Running the Application
-Development Mode
-bash
+```
+
+## 🚀 Running the Application
+
+### Development Mode
+
+```bash
 # VPS 2 - Start database
 cd ~/Huy-workspace/online-coding-platform/postgres-docker
 docker-compose up -d
@@ -408,8 +458,11 @@ docker-compose up -d
 # VPS 1 - Start web server in development mode
 cd ~/Huy-workspace/online-coding-platform/web-server
 npm run dev
-Production Mode
-bash
+```
+
+### Production Mode
+
+```bash
 # VPS 2 - Ensure database is running
 docker-compose up -d
 
@@ -419,8 +472,11 @@ npm run start:prod
 # Setup automatic startup
 pm2 startup
 pm2 save
-Health Checks
-bash
+```
+
+### Health Checks
+
+```bash
 # Check database health
 cd postgres-docker && ./scripts/test-connection.sh
 
@@ -429,9 +485,13 @@ curl http://202.249.25.210:3000/health
 
 # Check all services
 cd web-server && npm run health-check
-🔧 Maintenance Commands
-Database Maintenance
-bash
+```
+
+## 🔧 Maintenance Commands
+
+### Database Maintenance
+
+```bash
 # Create backup
 cd postgres-docker && ./scripts/backup.sh
 
@@ -443,8 +503,11 @@ docker-compose logs -f postgres
 
 # Monitor database performance
 docker-compose exec postgres psql -U oncode_admin -d online_coding_platform -c "SELECT * FROM pg_stat_activity;"
-Application Maintenance
-bash
+```
+
+### Application Maintenance
+
+```bash
 # Update application
 git pull origin main
 npm install
@@ -459,51 +522,67 @@ pm2 monit
 
 # Check application status
 pm2 status
-🌐 API Endpoints
-Authentication
-POST /api/auth/register - User registration
-POST /api/auth/login - User login
-POST /api/auth/logout - User logout
-POST /api/auth/refresh - Refresh token
-Courses
-GET /api/courses - List all courses
-GET /api/courses/:id - Get course details
-POST /api/courses - Create new course (Instructor)
-PUT /api/courses/:id - Update course (Instructor)
-DELETE /api/courses/:id - Delete course (Instructor)
-Live Sessions
-GET /api/live-sessions - List active sessions
-POST /api/live-sessions - Create new session (Instructor)
-POST /api/live-sessions/:id/join - Join session
-POST /api/live-sessions/:id/leave - Leave session
-🔒 Security Features
-JWT-based authentication
-Role-based access control (RBAC)
-Rate limiting
-Input validation and sanitization
-SQL injection prevention
-XSS protection
-CORS configuration
-Secure session management
-📊 Monitoring & Logging
-Application logs via Winston
-Database query logging
-Performance monitoring with PM2
-Error tracking and alerting
-Health check endpoints
-Resource usage monitoring
-🛠️ Development Workflow
-Local Development: Use npm run dev for hot reloading
-Testing: Run npm test for unit and integration tests
-Building: Use npm run build for production builds
-Deployment: Use PM2 for process management
-Monitoring: Check logs and metrics regularly
-📝 Contributing
-Create feature branch from main
-Make changes and test locally
-Run tests: npm test
-Submit pull request
-Deploy after review and approval
-Last Updated: 2025-06-12 12:36:56 UTC
-Maintained by: Huy-VNNIC
-Version: 1.0.0
+```
+
+## 🌐 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Refresh token
+
+### Courses
+- `GET /api/courses` - List all courses
+- `GET /api/courses/:id` - Get course details
+- `POST /api/courses` - Create new course (Instructor)
+- `PUT /api/courses/:id` - Update course (Instructor)
+- `DELETE /api/courses/:id` - Delete course (Instructor)
+
+### Live Sessions
+- `GET /api/live-sessions` - List active sessions
+- `POST /api/live-sessions` - Create new session (Instructor)
+- `POST /api/live-sessions/:id/join` - Join session
+- `POST /api/live-sessions/:id/leave` - Leave session
+
+## 🔒 Security Features
+
+- JWT-based authentication
+- Role-based access control (RBAC)
+- Rate limiting
+- Input validation and sanitization
+- SQL injection prevention
+- XSS protection
+- CORS configuration
+- Secure session management
+
+## 📊 Monitoring & Logging
+
+- Application logs via Winston
+- Database query logging
+- Performance monitoring with PM2
+- Error tracking and alerting
+- Health check endpoints
+- Resource usage monitoring
+
+## 🛠️ Development Workflow
+
+1. **Local Development**: Use `npm run dev` for hot reloading
+2. **Testing**: Run `npm test` for unit and integration tests
+3. **Building**: Use `npm run build` for production builds
+4. **Deployment**: Use PM2 for process management
+5. **Monitoring**: Check logs and metrics regularly
+
+## 📝 Contributing
+
+1. Create feature branch from `main`
+2. Make changes and test locally
+3. Run tests: `npm test`
+4. Submit pull request
+5. Deploy after review and approval
+
+---
+
+**Last Updated**: 2025-06-12 12:36:56 UTC  
+**Maintained by**: Huy-VNNIC  
+**Version**: 1.0.0
