@@ -8,13 +8,7 @@ dotenv.config();
 // Import User model
 const User = require('../models/user.model');
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+// We can skip connecting to MongoDB here as the connection is already established in the entrypoint script
 
 // Instructor credentials
 const instructorData = {
@@ -38,7 +32,6 @@ async function createInstructor() {
     
     if (existingUser) {
       console.log('Instructor user already exists');
-      mongoose.disconnect();
       return;
     }
     
@@ -62,8 +55,6 @@ async function createInstructor() {
     console.log('\n');
   } catch (err) {
     console.error('Error creating instructor:', err);
-  } finally {
-    mongoose.disconnect();
   }
 }
 

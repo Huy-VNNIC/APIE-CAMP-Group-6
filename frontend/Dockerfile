@@ -5,7 +5,16 @@ RUN apk --no-cache add curl
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+# Create npm configuration to better handle dependencies
+RUN npm config set legacy-peer-deps true
+# Create package.json resolutions to force date-fns version
+RUN npm pkg set resolutions="{\"date-fns\": \"2.30.0\"}"
+# Update package-lock.json to match resolutions
+RUN npm install --package-lock-only
+# Install dependencies with updated package-lock.json
+RUN npm ci
+# Explicitly install and overwrite date-fns with the correct version
+RUN npm install --save date-fns@2.30.0
 
 COPY . .
 

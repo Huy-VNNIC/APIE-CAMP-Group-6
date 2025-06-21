@@ -9,6 +9,9 @@ RUN npm install
 
 COPY . .
 
+# Make the entrypoint script executable
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 5000
 
-CMD ["npm", "run", "dev"]
+CMD ["./docker-entrypoint.sh"]
