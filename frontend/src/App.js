@@ -33,6 +33,7 @@ import MarketingDashboard from './pages/marketing/MarketingDashboard';
 import CampaignList from './pages/marketing/CampaignList';
 import CampaignDetail from './pages/marketing/CampaignDetail';
 import CampaignForm from './pages/marketing/CampaignForm';
+import AIEnhancedCampaignForm from './pages/marketing/AIEnhancedCampaignForm';
 
 import './App.css';
 
@@ -212,7 +213,7 @@ function App() {
                 element={
                   <PrivateRoute marketingRequired={true}>
                     <Layout>
-                      <CampaignForm />
+                      <AIEnhancedCampaignForm />
                     </Layout>
                   </PrivateRoute>
                 } 
@@ -222,7 +223,7 @@ function App() {
                 element={
                   <PrivateRoute marketingRequired={true}>
                     <Layout>
-                      <CampaignForm />
+                      <AIEnhancedCampaignForm />
                     </Layout>
                   </PrivateRoute>
                 } 

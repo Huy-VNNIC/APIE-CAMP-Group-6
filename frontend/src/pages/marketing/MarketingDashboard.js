@@ -6,7 +6,8 @@ import {
   Campaign as CampaignIcon, 
   Article as ContentIcon, 
   Handshake as PartnershipIcon, 
-  Analytics as AnalyticsIcon 
+  Analytics as AnalyticsIcon,
+  SmartToy
 } from '@mui/icons-material';
 import { getAllCampaigns, getMetricsSummary } from '../../services/marketingService';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -100,9 +101,21 @@ const MarketingDashboard = () => {
         <Typography variant="h4" component="h1" gutterBottom>
           Marketing Dashboard
         </Typography>
-        <Typography variant="subtitle1">
-          Welcome, {user?.fullName || 'Marketing Manager'}!
-        </Typography>
+        <Box>
+          <Button
+            component={Link}
+            to="/marketing/campaigns/new"
+            variant="contained"
+            color="secondary"
+            sx={{ mr: 2 }}
+            startIcon={<SmartToy />}
+          >
+            Create AI-Powered Campaign
+          </Button>
+          <Typography variant="subtitle1">
+            Welcome, {user?.fullName || 'Marketing Manager'}!
+          </Typography>
+        </Box>
       </Box>
 
       {/* Quick Action Cards */}
