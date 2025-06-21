@@ -14,6 +14,7 @@ import {
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios'; // Import axios for API calls
 
 const Login = () => {
   const { t } = useTranslation();
@@ -38,8 +39,52 @@ const Login = () => {
     
     setLoading(true);
     
-    // Mock login logic - in a real app, this would call an API
     try {
+      // First try real API login
+      try {
+        const response = await axios.post('/api/auth/login', {
+          username,
+          password
+        });
+        
+        if (response.data && response.data.token) {
+          // Store user data in context
+          login(response.data.user, response.data.token);
+          
+          // Navigate based on role
+          if (response.data.user.role === 'marketing') {
+            navigate('/marketing');
+          } else if (response.data.user.role === 'instructor') {
+            navigate('/instructor');
+          } else {
+            navigate('/');
+          }
+          return;
+        }
+      } catch (apiError) {
+        console.log('API login failed, trying mock logins');
+        // If API login fails, continue to mock logins
+      }
+      
+      // Check for marketing mock login
+      if (username === 'marketing' && password === 'marketing123') {
+        // Mock marketing login
+        const userData = {
+          id: 'marketing-123',
+          username: 'marketing',
+          fullName: 'Marketing User',
+          email: 'marketing@example.com',
+          role: 'marketing'
+        };
+        
+        // Store user data in context
+        login(userData, 'mock-token-marketing-123');
+        
+        // Navigate to marketing dashboard
+        navigate('/marketing');
+        return;
+      }
+      
       // Check for instructor mock login
       if (username === 'instructor' && password === 'instructor123') {
         // Mock instructor login
@@ -190,6 +235,9 @@ const Login = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary">
               <strong>Student:</strong> username: student / password: student123
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Marketing:</strong> username: marketing / password: marketing123
             </Typography>
           </Box>
         </Box>
