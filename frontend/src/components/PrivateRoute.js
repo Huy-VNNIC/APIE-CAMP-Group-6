@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
 
-const PrivateRoute = ({ children, instructorRequired = false }) => {
+const PrivateRoute = ({ children, instructorRequired = false, marketingRequired = false }) => {
   const { isAuthenticated, user, loading } = useContext(UserContext);
   
   // While checking authentication status, show nothing
@@ -17,6 +17,12 @@ const PrivateRoute = ({ children, instructorRequired = false }) => {
   
   // If route requires instructor role but user is not instructor
   if (instructorRequired && user && user.role !== 'instructor' && user.role !== 'admin') {
+    // Redirect to dashboard if they don't have permission
+    return <Navigate to="/" />;
+  }
+
+  // If route requires marketing role but user is not marketing
+  if (marketingRequired && user && user.role !== 'marketing' && user.role !== 'admin') {
     // Redirect to dashboard if they don't have permission
     return <Navigate to="/" />;
   }

@@ -17,6 +17,7 @@ const courseRoutes = require('./routes/course.routes');
 const assignmentRoutes = require('./routes/assignment.routes');
 const quizRoutes = require('./routes/quiz.routes');
 const sessionRoutes = require('./routes/session.routes');
+const marketingRoutes = require('./routes/marketing.routes');
 
 // Import socket service
 const { initializeSocketServer } = require('./services/socketService');
@@ -49,6 +50,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/marketing', marketingRoutes);
 
 // Get available sessions
 app.get('/api/live-sessions', (req, res) => {

@@ -28,6 +28,12 @@ import InstructorDashboard from './pages/InstructorDashboard';
 import CreateQuiz from './pages/CreateQuiz';
 import StudentDetail from './pages/StudentDetail';
 
+// Marketing Pages
+import MarketingDashboard from './pages/marketing/MarketingDashboard';
+import CampaignList from './pages/marketing/CampaignList';
+import CampaignDetail from './pages/marketing/CampaignDetail';
+import CampaignForm from './pages/marketing/CampaignForm';
+
 import './App.css';
 
 function App() {
@@ -165,6 +171,58 @@ function App() {
                   <PrivateRoute instructorRequired={true}>
                     <Layout>
                       <StudentDetail />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+
+              {/* Marketing Routes */}
+              <Route 
+                path="/marketing" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <MarketingDashboard />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/marketing/campaigns" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <CampaignList />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/marketing/campaigns/:id" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <CampaignDetail />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/marketing/campaigns/new" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <CampaignForm />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/marketing/campaigns/edit/:id" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <CampaignForm />
                     </Layout>
                   </PrivateRoute>
                 } 

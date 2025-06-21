@@ -35,6 +35,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LanguageIcon from '@mui/icons-material/Language';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import VideocamIcon from '@mui/icons-material/Videocam';
+import CampaignIcon from '@mui/icons-material/Campaign';
 
 const drawerWidth = 240;
 
@@ -43,7 +44,7 @@ const Layout = ({ children }) => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout, isInstructor } = useContext(UserContext);
+  const { user, isAuthenticated, logout } = useContext(UserContext);
   
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [anchorElUser, setAnchorElUser] = useState(null);
@@ -80,6 +81,15 @@ const Layout = ({ children }) => {
     handleCloseLangMenu();
   };
   
+  // Check user roles
+  const isInstructor = () => {
+    return user && (user.role === 'instructor' || user.role === 'admin');
+  };
+  
+  const isMarketing = () => {
+    return user && (user.role === 'marketing' || user.role === 'admin');
+  };
+  
   const pages = [
     // For all authenticated users
     { name: t('nav.dashboard'), path: '/', icon: <DashboardIcon />, auth: true },
@@ -95,6 +105,15 @@ const Layout = ({ children }) => {
       icon: <SupervisorAccountIcon />, 
       auth: true, 
       instructorOnly: true 
+    },
+    
+    // For marketing role only
+    { 
+      name: 'Marketing Dashboard', 
+      path: '/marketing', 
+      icon: <CampaignIcon />, 
+      auth: true, 
+      marketingOnly: true 
     }
   ];
   
@@ -103,7 +122,11 @@ const Layout = ({ children }) => {
     if (isAuthenticated) {
       // If page is instructor only, check if user is instructor
       if (page.instructorOnly) {
-        return isInstructor && isInstructor();
+        return isInstructor();
+      }
+      // If page is marketing only, check if user is marketing
+      if (page.marketingOnly) {
+        return isMarketing();
       }
       return true;
     }
