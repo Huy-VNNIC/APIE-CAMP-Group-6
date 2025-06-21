@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../../contexts/UserContext';
-import { Container, Typography, Grid, Paper, Box, Card, CardContent, Button } from '@mui/material';
+import { Container, Typography, Grid, Paper, Box, Card, CardContent, Button, CircularProgress, Alert } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { 
   Campaign as CampaignIcon, 
@@ -23,25 +23,92 @@ ChartJS.register(
   Legend
 );
 
+// Mock data for fallback
+const MOCK_CAMPAIGNS = [
+  {
+    _id: '1',
+    title: 'Summer Coding Bootcamp Promotion',
+    description: 'Special discount for summer coding bootcamps',
+    startDate: '2025-06-01',
+    endDate: '2025-08-31',
+    status: 'active',
+    targetAudience: 'students',
+    budget: 5000,
+    conversions: 127
+  },
+  {
+    _id: '2',
+    title: 'New AI Course Launch',
+    description: 'Marketing campaign for our new AI certification course',
+    startDate: '2025-07-01',
+    endDate: '2025-09-30',
+    status: 'draft',
+    targetAudience: 'all',
+    budget: 7500,
+    conversions: 0
+  },
+  {
+    _id: '3',
+    title: 'Back to School Promo',
+    description: 'Special offers for the back to school season',
+    startDate: '2025-08-15',
+    endDate: '2025-09-15',
+    status: 'active',
+    targetAudience: 'students',
+    budget: 3000,
+    conversions: 85
+  }
+];
+
+const MOCK_METRICS = {
+  totalUsers: 5824,
+  activeUsers: 3217,
+  newSignups: 342,
+  courseCompletions: 1285,
+  totalRevenue: 125750,
+  monthlyGrowth: 12.5,
+  engagementRate: 68.4,
+  userRetention: 76.2,
+  trafficSources: {
+    organic: 42,
+    direct: 28,
+    social: 18,
+    referral: 8,
+    email: 4
+  },
+  monthlyEnrollments: [320, 345, 375, 410, 450, 480, 510, 520, 480, 460, 500, 540],
+  revenueData: [12500, 13200, 14500, 15800, 16700, 18200, 19500, 20100, 21300, 22500, 23800, 25500]
+};
+
 const MarketingDashboard = () => {
   const { user } = useContext(UserContext);
   const [campaigns, setCampaigns] = useState([]);
   const [metrics, setMetrics] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [usedMockData, setUsedMockData] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // Fetch campaigns
-        const campaignResponse = await getAllCampaigns();
-        setCampaigns(campaignResponse?.data || []);
-        
-        // Fetch metrics summary
-        const metricsResponse = await getMetricsSummary();
-        setMetrics(metricsResponse?.data || {});
+        try {
+          // Try real API first
+          // Fetch campaigns
+          const campaignResponse = await getAllCampaigns();
+          setCampaigns(campaignResponse?.data || []);
+          
+          // Fetch metrics summary
+          const metricsResponse = await getMetricsSummary();
+          setMetrics(metricsResponse?.data || {});
+        } catch (apiError) {
+          console.error('API error, using mock data:', apiError);
+          // If API fails, use mock data
+          setCampaigns(MOCK_CAMPAIGNS);
+          setMetrics(MOCK_METRICS);
+          setUsedMockData(true);
+        }
         
         setLoading(false);
       } catch (error) {
@@ -80,7 +147,8 @@ const MarketingDashboard = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress size={60} />
         <Typography variant="h4">Loading marketing dashboard...</Typography>
       </Container>
     );
@@ -104,6 +172,12 @@ const MarketingDashboard = () => {
           Welcome, {user?.fullName || 'Marketing Manager'}!
         </Typography>
       </Box>
+
+      {usedMockData && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Using demonstration data. The backend API connection could not be established. This is normal if you're running in development mode without the backend services.
+        </Alert>
+      )}
 
       {/* Quick Action Cards */}
       <Grid container spacing={3} mb={5}>

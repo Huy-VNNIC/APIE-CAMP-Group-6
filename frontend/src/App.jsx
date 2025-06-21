@@ -16,6 +16,9 @@ import StudentNotifications from './pages/StudentNotifications';
 import StudentAnalytics from './pages/StudentAnalytics';
 import StudentCollaboration from './pages/StudentCollaboration';
 
+// Marketing Pages
+import MarketingDashboard from './pages/marketing/MarketingDashboard';
+
 // Theme
 const theme = createTheme({
   palette: {
@@ -71,12 +74,21 @@ function App() {
             <Route path="/student/analytics" element={<StudentAnalytics />} />
             <Route path="/student/collaboration" element={<StudentCollaboration />} />
             
+            {/* Marketing Routes */}
+            <Route path="/marketing" element={<MarketingDashboard />} />
+            <Route path="/marketing/campaigns" element={<Navigate to="/marketing" />} />
+            <Route path="/marketing/promotional-content" element={<Navigate to="/marketing" />} />
+            <Route path="/marketing/partnerships" element={<Navigate to="/marketing" />} />
+            <Route path="/marketing/metrics" element={<Navigate to="/marketing" />} />
+            
             {/* Add default route based on user role */}
             <Route 
               path="/" 
               element={
                 user?.role === 'student' 
                   ? <Navigate to="/student/dashboard" /> 
+                  : user?.role === 'marketing'
+                  ? <Navigate to="/marketing" />
                   : <Navigate to="/live-sessions" />
               } 
             />
