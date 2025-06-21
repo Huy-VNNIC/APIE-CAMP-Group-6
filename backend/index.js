@@ -2,9 +2,13 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const connectDB = require('./src/config/db');
 
 // Load environment variables
 dotenv.config();
+
+// Connect to MongoDB
+connectDB();
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -68,6 +72,11 @@ app.get('/api/live-sessions', (req, res) => {
 // Root route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Online Coding Platform API' });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
 });
 
 // Start server
