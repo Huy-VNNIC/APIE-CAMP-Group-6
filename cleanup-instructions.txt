@@ -1,0 +1,45 @@
+# Instructions to Clean Up API Key from Git History
+
+Follow these steps in order to remove the OpenAI API key from your git history and push successfully:
+
+## 1. Clone a fresh copy of the repository (outside of this workspace)
+
+```bash
+git clone https://github.com/Huy-VNNIC/APIE-CAMP-Group-6.git clean-repo
+cd clean-repo
+```
+
+## 2. Use BFG to remove the API key
+
+Download BFG from https://rtyley.github.io/bfg-repo-cleaner/ if you don't have it already, then:
+
+```bash
+# Create a text file containing the secret to remove
+echo "sk-your-api-key-pattern" > secrets.txt
+
+# Run BFG to clean the history
+java -jar bfg.jar --replace-text secrets.txt
+
+# Clean up refs and ensure garbage collection
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+```
+
+## 3. Push the cleaned repository with force
+
+```bash
+# First, add the README and .env.example changes manually
+# (Copy the updated files from the original workspace)
+
+# Then commit and force push
+git add README.md backend/.env.example
+git commit -m "Add API key configuration instructions and improve documentation"
+git push origin main --force
+```
+
+## 4. Important Security Notes
+
+- After pushing, make sure to invalidate the exposed API key
+- Create a new API key on the OpenAI platform
+- Update your local .env file with the new key
+- Never commit API keys or secrets to git repositories
