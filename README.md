@@ -526,6 +526,16 @@ pm2 status
 
 ## 🌐 API Endpoints
 
+### Configuration for Marketing AI Features
+
+The marketing dashboard includes AI-powered features for generating campaign ideas and promotional content. To use these features:
+
+1. Create a `.env` file in the backend directory based on `.env.example`
+2. Add your OpenAI API key as `OPENAI_API_KEY=your_key_here`
+3. Restart the backend container: `docker-compose restart backend`
+
+Never commit your API key to version control. The system will check if the key is configured and provide feedback in the backend logs.
+
 ### Authentication
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
