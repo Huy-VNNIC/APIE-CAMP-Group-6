@@ -53,6 +53,25 @@ i18n
             assignments: "Assignments",
             playground: "Playground"
           },
+          dashboard: {
+            your_courses: "Your Courses",
+            completed: "completed",
+            last_accessed: "Last accessed",
+            recent_exercises: "Recent Exercises",
+            quick_tools: "Quick Tools",
+            progress: "Progress",
+            stats: {
+              completed_courses: "Completed Courses",
+              submitted_exercises: "Submitted Exercises", 
+              average_score: "Average Score"
+            }
+          },
+          assignments: {
+            overdue: "Overdue",
+            open: "Open",
+            due_date: "Due date",
+            progress: "Progress"
+          },
           common: {
             profile: "Profile",
             logout: "Logout",
