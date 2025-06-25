@@ -34,6 +34,9 @@ i18n
     resources: {
       en: {
         translation: {
+          app: {
+            title: "Online Coding Platform"
+          },
           auth: {
             login_title: "Login",
             username: "Username", 
@@ -49,6 +52,12 @@ i18n
             courses: "Courses", 
             assignments: "Assignments",
             playground: "Playground"
+          },
+          common: {
+            profile: "Profile",
+            logout: "Logout",
+            login: "Login",
+            register: "Register"
           },
           errors: {
             login_failed: "Login failed. Please try again."

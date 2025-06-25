@@ -13,10 +13,10 @@ import {
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
-// import { useTranslation } from 'react-i18next'; // Temporarily disabled
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
-  // const { t } = useTranslation(); // Temporarily disabled
+  const { t } = useTranslation();
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
   
@@ -160,7 +160,7 @@ const Login = () => {
         }}
       >
         <Typography variant="h4" component="h1" align="center" gutterBottom>
-          Login
+          {t('auth.login_title')}
         </Typography>
         
         {error && (
@@ -172,7 +172,7 @@ const Login = () => {
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
             fullWidth
-            label="Username"
+            label={t('auth.username')}
             variant="outlined"
             margin="normal"
             value={username}
@@ -182,7 +182,7 @@ const Login = () => {
           
           <TextField
             fullWidth
-            label="Password"
+            label={t('auth.password')}
             type="password"
             variant="outlined"
             margin="normal"
