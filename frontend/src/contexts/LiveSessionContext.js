@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+// import useCallback - removed unused import
 
 // Create context
 export const LiveSessionContext = createContext();

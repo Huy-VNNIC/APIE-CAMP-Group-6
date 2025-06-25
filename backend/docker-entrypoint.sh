@@ -1,45 +1,44 @@
 #!/bin/sh
 
+# Add check for missing dependencies
+echo "Checking for any missing Node.js dependencies..."
+npm install --no-save axios
+
 # Add bcryptjs package if missing
 if ! grep -q "bcryptjs" package.json; then
   echo "Adding bcryptjs dependency..."
   npm install --save bcryptjs
 fi
 
-# Create initial users (instructor and marketing)
-echo "Setting up initial users..."
+# Create simple health endpoint if it doesn't exist
+echo "Setting up health endpoint..."
+mkdir -p src/routes
 
-# Wait for MongoDB connection before running scripts
-echo "Waiting for MongoDB connection..."
-node -e "
-const mongoose = require('mongoose');
-const waitForMongo = async () => {
-  let connected = false;
-  while (!connected) {
-    try {
-      await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
-      connected = true;
-      console.log('MongoDB connected successfully');
-    } catch (err) {
-      console.log('Waiting for MongoDB connection... (retrying in 2 seconds)');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-  mongoose.disconnect(); // Disconnect after successful connection
-  process.exit(0); // Explicitly exit the Node.js process to continue the script
-};
-waitForMongo();
-" || exit 1
+# Add simple health check endpoint directly to index.js
+if ! grep -q "app.get('/health'" index.js; then
+  echo "Adding health check endpoint to index.js"
+  sed -i -e '/const app = express/a\\n// Health check endpoint\napp.get(\"/health\", (req, res) => {\n  res.status(200).json({ status: \"healthy\" });\n});' index.js || echo "Failed to update index.js, but continuing..."
+fi
 
-# Try to create users but don't exit if they fail
-echo "Creating instructor user..."
-node scripts/create-instructor.js || echo "Warning: Failed to create instructor user but continuing"
+# Wait for MongoDB to be available
+echo "Waiting for MongoDB to be ready..."
+MAX_RETRIES=30
+RETRY_COUNT=0
 
-echo "Creating marketing user..."
-node scripts/create-marketing-user.js || echo "Warning: Failed to create marketing user but continuing"
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+  echo "Attempt $((RETRY_COUNT+1)) of $MAX_RETRIES to connect to MongoDB..."
+  
+  # Simple connection test
+  if nc -z mongodb 27017; then
+    echo "MongoDB is reachable!"
+    sleep 2
+    break
+  else
+    echo "Failed to connect to MongoDB, retrying in 5 seconds..."
+    sleep 5
+    RETRY_COUNT=$((RETRY_COUNT+1))
+  fi
+done
 
 # Start the application
 echo "Starting the application..."

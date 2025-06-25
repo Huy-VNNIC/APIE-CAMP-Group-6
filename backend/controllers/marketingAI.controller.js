@@ -31,9 +31,75 @@ const callOpenAI = async (messages) => {
   }
 };
 
+// Helper to generate fallback campaign ideas for internet/coding programs
+const generateFallbackCampaignIdeas = (prompt) => {
+  const lowerPrompt = prompt.toLowerCase();
+  
+  // Internet programs related fallback ideas
+  if (lowerPrompt.includes('internet') || lowerPrompt.includes('online') || lowerPrompt.includes('web') || lowerPrompt.includes('programming') || lowerPrompt.includes('coding')) {
+    return [
+      {
+        title: "Learn Web Development - From Zero to Hero",
+        description: "A comprehensive online program teaching HTML, CSS, JavaScript, React, and Node.js. Build real projects and get job-ready skills in 6 months.",
+        targetAudience: "students",
+        audienceDescription: "Beginners and career changers looking to enter web development",
+        channels: ["email", "social", "website", "push"]
+      },
+      {
+        title: "Advanced Internet Technologies Bootcamp",
+        description: "Master modern web technologies including cloud computing, API development, microservices, and deployment strategies. Perfect for experienced developers.",
+        targetAudience: "students", 
+        audienceDescription: "Intermediate to advanced developers and IT professionals",
+        channels: ["email", "website", "social"]
+      },
+      {
+        title: "Internet Security & Ethical Hacking Course",
+        description: "Learn cybersecurity fundamentals, ethical hacking techniques, and how to protect web applications. Industry certification included.",
+        targetAudience: "all",
+        audienceDescription: "IT professionals, students, and anyone interested in cybersecurity",
+        channels: ["email", "social", "website", "push", "sms"]
+      }
+    ];
+  }
+  
+  // General educational campaign ideas
+  return [
+    {
+      title: "Transform Your Career with Technology Skills",
+      description: "Join our comprehensive technology education program and learn in-demand skills that employers are looking for.",
+      targetAudience: "students",
+      audienceDescription: "Working professionals and students seeking career advancement",
+      channels: ["email", "social", "website"]
+    },
+    {
+      title: "Interactive Learning Experience",
+      description: "Experience hands-on learning with our innovative platform featuring live coding sessions, peer collaboration, and expert mentorship.",
+      targetAudience: "all",
+      audienceDescription: "Learners of all levels who prefer interactive and engaging education",
+      channels: ["email", "website", "push"]
+    },
+    {
+      title: "Flexible Learning for Busy Professionals",
+      description: "Study at your own pace with our flexible course structure designed for working professionals and busy schedules.",
+      targetAudience: "students",
+      audienceDescription: "Working professionals balancing education with career responsibilities",
+      channels: ["email", "social", "website", "sms"]
+    }
+  ];
+};
+
 // Generate campaign ideas
 exports.generateCampaignIdeas = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
     const { prompt } = req.body;
     
     if (!prompt) {
@@ -43,38 +109,55 @@ exports.generateCampaignIdeas = async (req, res) => {
       });
     }
 
-    const messages = [
-      {
-        role: 'system',
-        content: 'You are a marketing expert specializing in educational technology. Generate 3 detailed campaign ideas based on the user prompt. Format your response as a JSON array with each object containing: title, description, targetAudience (value should be "students", "instructors", or "all"), audienceDescription (descriptive text), and channels (array with any of: "email", "social", "website", "push", "sms").'
-      },
-      {
-        role: 'user',
-        content: prompt
-      }
-    ];
-
-    const openAIResponse = await callOpenAI(messages);
-    
-    // Parse JSON from response
     let campaignIdeas;
-    try {
-      campaignIdeas = JSON.parse(openAIResponse);
-    } catch (err) {
-      console.error('Error parsing OpenAI response:', err);
-      console.log('Raw response:', openAIResponse);
-      campaignIdeas = [];
+
+    // Check if OpenAI API key is available
+    if (!OPENAI_API_KEY || OPENAI_API_KEY === 'your_openai_api_key_here') {
+      console.log('OpenAI API key not configured, using fallback content');
+      campaignIdeas = generateFallbackCampaignIdeas(prompt);
+    } else {
+      try {
+        const messages = [
+          {
+            role: 'system',
+            content: 'You are a marketing expert specializing in educational technology. Generate 3 detailed campaign ideas based on the user prompt. Format your response as a JSON array with each object containing: title, description, targetAudience (value should be "students", "instructors", or "all"), audienceDescription (descriptive text), and channels (array with any of: "email", "social", "website", "push", "sms").'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ];
+
+        const openAIResponse = await callOpenAI(messages);
+        
+        // Parse JSON from response
+        try {
+          campaignIdeas = JSON.parse(openAIResponse);
+        } catch (err) {
+          console.error('Error parsing OpenAI response:', err);
+          console.log('Raw response:', openAIResponse);
+          throw new Error('Invalid AI response format');
+        }
+      } catch (aiError) {
+        console.error('OpenAI API failed, using fallback:', aiError.message);
+        campaignIdeas = generateFallbackCampaignIdeas(prompt);
+      }
     }
 
     res.json({
       success: true,
-      data: campaignIdeas
+      ideas: campaignIdeas
     });
   } catch (err) {
     console.error('Error generating campaign ideas:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate campaign ideas'
+    
+    // Last resort fallback
+    const fallbackIdeas = generateFallbackCampaignIdeas(req.body.prompt || 'general education');
+    
+    res.json({
+      success: true,
+      ideas: fallbackIdeas,
+      note: 'Fallback content provided due to service unavailability'
     });
   }
 };

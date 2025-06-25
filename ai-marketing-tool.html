@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Marketing Campaign Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .campaign {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .campaign h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .campaign-meta {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .login-section {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Marketing Campaign Generator</h1>
+        
+        <div class="login-section">
+            <h3>Authentication</h3>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" value="marketing" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="marketing123" placeholder="Enter password">
+            </div>
+            <button onclick="login()">Login</button>
+        </div>
+
+        <div id="campaignSection" style="display: none;">
+            <div class="form-group">
+                <label for="prompt">Describe your campaign needs:</label>
+                <textarea id="prompt" rows="4" placeholder="Example: Create marketing campaigns for internet programming courses targeting beginners who want to learn web development..."></textarea>
+            </div>
+            
+            <button onclick="generateCampaigns()" id="generateBtn">🚀 Generate AI Campaign Ideas</button>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <p>🤖 AI is generating amazing campaign ideas for you...</p>
+            </div>
+            
+            <div id="error" class="error" style="display: none;"></div>
+            
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.token) {
+                    authToken = data.token;
+                    document.querySelector('.login-section').innerHTML = 
+                        `<div class="success">✅ Logged in as ${data.user.fullName} (${data.user.role})</div>`;
+                    document.getElementById('campaignSection').style.display = 'block';
+                } else {
+                    showError('Login failed. Please check your credentials.');
+                }
+            } catch (error) {
+                showError('Login error: ' + error.message);
+            }
+        }
+
+        async function generateCampaigns() {
+            const prompt = document.getElementById('prompt').value.trim();
+            
+            if (!prompt) {
+                showError('Please enter a campaign description.');
+                return;
+            }
+            
+            if (!authToken) {
+                showError('Please login first.');
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/marketing/ai/campaign-ideas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': authToken
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.ideas) {
+                    displayCampaigns(data.ideas);
+                } else {
+                    showError('Failed to generate campaigns: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        function displayCampaigns(campaigns) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '<h2>🎯 Generated Campaign Ideas</h2>';
+            
+            campaigns.forEach((campaign, index) => {
+                html += `
+                    <div class="campaign">
+                        <h3>${index + 1}. ${campaign.title}</h3>
+                        <p><strong>Description:</strong> ${campaign.description}</p>
+                        <div class="campaign-meta">
+                            <strong>Target Audience:</strong> ${campaign.audienceDescription}<br>
+                            <strong>Marketing Channels:</strong> ${campaign.channels ? campaign.channels.join(', ') : 'All channels'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Auto-fill example prompt
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('prompt').value = 'Create marketing campaigns for internet programming courses targeting beginners who want to learn web development and get their first tech job';
+        });
+    </script>
+</body>
+</html>

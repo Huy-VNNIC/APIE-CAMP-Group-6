@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next'; // Temporarily disabled
 import {
   AppBar,
   Box,
@@ -40,7 +40,7 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 const drawerWidth = 240;
 
 const Layout = ({ children }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation(); // Temporarily disabled
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -92,10 +92,10 @@ const Layout = ({ children }) => {
   
   const pages = [
     // For all authenticated users
-    { name: t('nav.dashboard'), path: '/', icon: <DashboardIcon />, auth: true },
-    { name: t('nav.courses'), path: '/courses', icon: <SchoolIcon />, auth: true },
-    { name: t('nav.assignments'), path: '/assignments', icon: <AssignmentIcon />, auth: true },
-    { name: t('nav.playground'), path: '/playground', icon: <CodeIcon />, auth: true },
+    { name: 'Dashboard', path: '/', icon: <DashboardIcon />, auth: true },
+    { name: 'Courses', path: '/courses', icon: <SchoolIcon />, auth: true },
+    { name: 'Assignments', path: '/assignments', icon: <AssignmentIcon />, auth: true },
+    { name: 'Playground', path: '/playground', icon: <CodeIcon />, auth: true },
     { name: 'Live Sessions', path: '/live-sessions', icon: <VideocamIcon />, auth: true },
     
     // For instructor role only
@@ -136,7 +136,7 @@ const Layout = ({ children }) => {
   const drawerContent = (
     <Box sx={{ p: 2 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        {t('app.title')}
+        Coding Platform
       </Typography>
       <Divider sx={{ mb: 2 }} />
       <List>
@@ -205,7 +205,7 @@ const Layout = ({ children }) => {
                 textDecoration: 'none',
               }}
             >
-              {t('app.title')}
+              Coding Platform
             </Typography>
             
             <Box sx={{ flexGrow: 1 }} />
@@ -273,7 +273,7 @@ const Layout = ({ children }) => {
                       <ListItemIcon>
                         <AccountCircleIcon fontSize="small" />
                       </ListItemIcon>
-                      <Typography textAlign="center">{t('common.profile')}</Typography>
+                      <Typography textAlign="center">Profile</Typography>
                     </MenuItem>
                     
                     <Divider />
@@ -282,7 +282,7 @@ const Layout = ({ children }) => {
                       <ListItemIcon>
                         <LogoutIcon fontSize="small" />
                       </ListItemIcon>
-                      <Typography textAlign="center">{t('common.logout')}</Typography>
+                      <Typography textAlign="center">Logout</Typography>
                     </MenuItem>
                   </Menu>
                 </>
@@ -293,7 +293,7 @@ const Layout = ({ children }) => {
                     to="/login"
                     sx={{ color: 'white', mr: 1 }}
                   >
-                    {t('common.login')}
+                    Login
                   </Button>
                   <Button
                     component={RouterLink}
@@ -301,7 +301,7 @@ const Layout = ({ children }) => {
                     variant="outlined"
                     sx={{ color: 'white', borderColor: 'white' }}
                   >
-                    {t('common.register')}
+                    Register
                   </Button>
                 </Box>
               )}

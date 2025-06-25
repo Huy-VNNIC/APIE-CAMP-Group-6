@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import QrCode from '@mui/icons-material/QrCode';
+// import QrCode from '@mui/icons-material/QrCode'; // Removed unused import
 
 const SessionShareQRCode = ({ sessionId, password, title }) => {
   const [copied, setCopied] = useState({
@@ -30,7 +30,7 @@ const SessionShareQRCode = ({ sessionId, password, title }) => {
   });
 
   // Generate direct access URL and invitation URL
-  const sessionUrl = `${window.location.origin}/live-session/${sessionId}`;
+  // const sessionUrl = `${window.location.origin}/live-session/${sessionId}`; // Commented out unused variable
   const inviteUrl = `${window.location.origin}/invite?session=${sessionId}${password ? `&password=${password}` : ''}`;
   
   // Generate QR code URL

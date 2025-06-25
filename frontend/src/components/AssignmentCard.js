@@ -7,8 +7,8 @@ import {
   Button,
   Box,
   Chip,
-  LinearProgress,
-  Tooltip
+  LinearProgress
+  // Tooltip - removed unused import
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';

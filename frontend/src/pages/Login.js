@@ -13,11 +13,10 @@ import {
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
-import { useTranslation } from 'react-i18next';
-import axios from 'axios'; // Import axios for API calls
+// import { useTranslation } from 'react-i18next'; // Temporarily disabled
 
 const Login = () => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation(); // Temporarily disabled
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
   
@@ -42,24 +41,34 @@ const Login = () => {
     try {
       // First try real API login
       try {
-        const response = await axios.post('/api/auth/login', {
-          username,
-          password
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username,
+            password
+          })
         });
         
-        if (response.data && response.data.token) {
-          // Store user data in context
-          login(response.data.user, response.data.token);
-          
-          // Navigate based on role
-          if (response.data.user.role === 'marketing') {
-            navigate('/marketing');
-          } else if (response.data.user.role === 'instructor') {
-            navigate('/instructor');
-          } else {
-            navigate('/');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.token) {
+            // Store user data in context
+            login(data.user, data.token);
+            
+            // Navigate based on role
+            if (data.user.role === 'marketing') {
+              navigate('/marketing');
+            } else if (data.user.role === 'instructor') {
+              navigate('/instructor');
+            } else {
+              navigate('/');
+            }
+            return;
           }
-          return;
         }
       } catch (apiError) {
         console.log('API login failed, trying mock logins');
@@ -72,7 +81,7 @@ const Login = () => {
         const userData = {
           id: 'marketing-123',
           username: 'marketing',
-          fullName: 'Marketing User',
+          fullName: 'Marketing Manager',
           email: 'marketing@example.com',
           role: 'marketing'
         };
@@ -123,11 +132,11 @@ const Login = () => {
         return;
       }
       
-      // If none of the mock accounts match, show error
+      // If none of the accounts match, show error
       setError('Invalid username or password');
     } catch (err) {
       console.error('Login error:', err);
-      setError(t('errors.login_failed'));
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -151,7 +160,7 @@ const Login = () => {
         }}
       >
         <Typography variant="h4" component="h1" align="center" gutterBottom>
-          {t('auth.login_title')}
+          Login
         </Typography>
         
         {error && (
@@ -163,7 +172,7 @@ const Login = () => {
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
             fullWidth
-            label={t('auth.username')}
+            label="Username"
             variant="outlined"
             margin="normal"
             value={username}
@@ -173,7 +182,7 @@ const Login = () => {
           
           <TextField
             fullWidth
-            label={t('auth.password')}
+            label="Password"
             type="password"
             variant="outlined"
             margin="normal"
@@ -192,11 +201,11 @@ const Login = () => {
                   disabled={loading}
                 />
               }
-              label={t('auth.remember_me')}
+              label="Remember me"
             />
             
             <Link component="button" variant="body2" onClick={() => alert('Password reset functionality')}>
-              {t('auth.forgot_password')}
+              Forgot password?
             </Link>
           </Box>
           
@@ -212,15 +221,15 @@ const Login = () => {
             {loading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              t('auth.sign_in')
+              'Sign In'
             )}
           </Button>
           
           <Box sx={{ textAlign: 'center', mt: 2 }}>
             <Typography variant="body2">
-              {t('auth.no_account')}{' '}
+              Don't have an account?{' '}
               <Link component={RouterLink} to="/register" variant="body2">
-                {t('auth.sign_up')}
+                Sign Up
               </Link>
             </Typography>
           </Box>
@@ -235,9 +244,6 @@ const Login = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary">
               <strong>Student:</strong> username: student / password: student123
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Marketing:</strong> username: marketing / password: marketing123
             </Typography>
           </Box>
         </Box>

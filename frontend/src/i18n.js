@@ -12,8 +12,8 @@ i18n
   .use(initReactI18next)
   // Init i18next
   .init({
-    fallbackLng: 'vi',
-    debug: true,
+    fallbackLng: 'en',
+    debug: false, // Disable debug to reduce console noise
     
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
@@ -28,6 +28,33 @@ i18n
     detection: {
       order: ['localStorage', 'cookie', 'navigator'],
       caches: ['localStorage', 'cookie'],
+    },
+
+    // Add default resources to prevent loading errors
+    resources: {
+      en: {
+        translation: {
+          auth: {
+            login_title: "Login",
+            username: "Username", 
+            password: "Password",
+            remember_me: "Remember me",
+            forgot_password: "Forgot password?",
+            sign_in: "Sign In",
+            no_account: "Don't have an account?",
+            sign_up: "Sign Up"
+          },
+          nav: {
+            dashboard: "Dashboard",
+            courses: "Courses", 
+            assignments: "Assignments",
+            playground: "Playground"
+          },
+          errors: {
+            login_failed: "Login failed. Please try again."
+          }
+        }
+      }
     }
   });
 

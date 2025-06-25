@@ -24,7 +24,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CodeIcon from '@mui/icons-material/Code';
 import SchoolIcon from '@mui/icons-material/School';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
+// import AttachFileIcon from '@mui/icons-material/AttachFile'; // Removed unused import
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // Dummy assignment data - would come from API in real app

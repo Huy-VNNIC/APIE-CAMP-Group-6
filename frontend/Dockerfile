@@ -4,19 +4,21 @@ RUN apk --no-cache add curl
 
 WORKDIR /app
 
-COPY package*.json ./
-# Create npm configuration to better handle dependencies
+# Copy package.json and install dependencies
+COPY package.json package-lock.json* ./
 RUN npm config set legacy-peer-deps true
-# Create package.json resolutions to force date-fns version
-RUN npm pkg set resolutions="{\"date-fns\": \"2.30.0\"}"
-# Update package-lock.json to match resolutions
-RUN npm install --package-lock-only
-# Install dependencies with updated package-lock.json
-RUN npm ci
-# Explicitly install and overwrite date-fns with the correct version
-RUN npm install --save date-fns@2.30.0
+RUN npm install
 
+# Copy the rest of the app
 COPY . .
+
+# Set environment variables
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV WDS_SOCKET_PORT=0
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+ENV BROWSER=none
 
 EXPOSE 3000
 

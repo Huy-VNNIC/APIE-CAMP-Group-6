@@ -1,6 +1,45 @@
 # Online Coding Platform
 
-A comprehensive online programming learning platform with interactive learning features, exercises, assessments, and live coding sessions.
+A comprehensive online programming learning platform with interactive learning features, exercises, assessments, live coding sessions, and **AI-powered marketing campaign generation**.
+
+## 🎯 NEW: AI Marketing Campaign System
+
+### Features
+- **AI-Powered Campaign Generation**: Create professional marketing campaigns using OpenAI
+- **Fallback System**: High-quality fallback campaigns when AI is unavailable  
+- **Internet Programming Focus**: Specialized campaigns for coding courses
+- **Role-Based Access**: Secure marketing user authentication
+- **Multiple Access Methods**: Web interface, standalone tool, direct API
+
+### Quick Start for AI Marketing
+1. **Setup Environment**:
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your OPENAI_API_KEY
+   ```
+
+2. **Start Services**:
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Access Marketing Tools**:
+   - Web Interface: http://localhost:3001 (login: marketing/marketing123)
+   - Standalone Tool: Open `ai-marketing-tool.html` in browser
+   - Direct API: http://localhost:5001/api/marketing/ai/campaign-ideas
+
+### AI Campaign Generation Example
+```bash
+# Generate campaigns via API
+curl -X POST http://localhost:5001/api/marketing/ai/campaign-ideas \
+  -H "Content-Type: application/json" \
+  -H "x-auth-token: YOUR_TOKEN" \
+  -d '{"prompt":"create campaigns for internet programming courses"}'
+```
+
+**Result**: Professional campaigns with titles, descriptions, target audiences, and marketing channels!
+
+---
 
 ## 🏗️ System Architecture
 

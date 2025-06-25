@@ -1,6 +1,6 @@
 FROM node:18-alpine
 
-RUN apk --no-cache add curl
+RUN apk --no-cache add curl netcat-openbsd
 
 WORKDIR /app
 

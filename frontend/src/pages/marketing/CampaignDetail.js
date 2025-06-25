@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Container, Typography, Box, Grid, Paper, Chip, Button,
-  CircularProgress, Divider, Card, CardContent, Tab, Tabs,
+  CircularProgress, /* Divider, */ Card, CardContent, Tab, Tabs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material';
 import {

@@ -5,7 +5,7 @@ import {
   Button, MenuItem, FormControl, InputLabel, Select,
   Chip, FormHelperText, CircularProgress, Alert,
   InputAdornment, Accordion, AccordionSummary, AccordionDetails, 
-  Card, CardContent, Divider, List, ListItem, ListItemText,
+  Card, CardContent, /* Divider, */ List, ListItem, ListItemText,
   Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
   Tab, Tabs
 } from '@mui/material';
@@ -24,8 +24,8 @@ import { createCampaign, getCampaignById, updateCampaign } from '../../services/
 import { 
   generateCampaignIdeas, 
   generateContentSuggestions,
-  analyzeTargetAudience,
-  optimizeCampaign 
+  analyzeTargetAudience
+  // optimizeCampaign  // Commented out unused import
 } from '../../services/aiService';
 
 // Channel options

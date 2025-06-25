@@ -25,11 +25,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
+  // List, // Removed unused import
+  // ListItem, // Removed unused import
+  // ListItemText, // Removed unused import
+  // ListItemAvatar, // Removed unused import
+  // Avatar, // Removed unused import
   CircularProgress,
   Switch,
   FormGroup,
@@ -398,11 +398,11 @@ const LiveSessionsPage = () => {
   };
   
   // Filter sessions relevant to the current user
-  const userSessions = sessions.filter(
-    session => user.role === 'instructor' ? 
-      session.instructorName === user.fullName : 
-      true
-  );
+  // const userSessions = sessions.filter( // Commented out unused variable
+  //   session => user.role === 'instructor' ? 
+  //     session.instructorName === user.fullName : 
+  //     true
+  // );
   
   // Get filtered and sorted sessions based on all criteria
   const filteredSessions = activeTab === 0 ? 
