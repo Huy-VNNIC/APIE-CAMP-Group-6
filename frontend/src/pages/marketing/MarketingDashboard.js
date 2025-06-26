@@ -193,7 +193,7 @@ const MarketingDashboard = () => {
       )}
 
       {/* Quick Action Cards */}
-      <Grid container spacing={3} mb={5}>
+      <Grid container spacing={3} sx={{ mb: 5 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card 
             component={Link} 
@@ -465,7 +465,7 @@ const MarketingDashboard = () => {
         </Grid>
 
         {/* Recent Campaigns */}
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Paper sx={{ p: 2, mt: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" component="h3">
@@ -478,7 +478,7 @@ const MarketingDashboard = () => {
             
             <Grid container spacing={3}>
               {campaigns.slice(0, 4).map((campaign) => (
-                <Grid item xs={12} sm={6} md={3} key={campaign._id}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={campaign._id}>
                   <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
                     <Typography variant="subtitle1" component="h4" gutterBottom>
                       {campaign.title}
@@ -512,7 +512,7 @@ const MarketingDashboard = () => {
               ))}
               
               {campaigns.length === 0 && (
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Typography align="center" color="text.secondary">
                     No campaigns found. Create your first campaign!
                   </Typography>

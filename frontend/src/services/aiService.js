@@ -1,12 +1,21 @@
 import axios from 'axios';
-import { createAuthenticatedRequest } from './authService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
+// Create simple axios instance without auth requirements
+const createSimpleRequest = () => {
+  return axios.create({
+    baseURL: API_URL,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+};
 
 // Generate campaign ideas using OpenAI API
 export const generateCampaignIdeas = async (prompt) => {
   try {
-    const api = createAuthenticatedRequest();
+    const api = createSimpleRequest();
     const response = await api.post('/marketing/ai/campaign-ideas', { prompt });
     return response.data;
   } catch (error) {
@@ -45,21 +54,21 @@ export const generateCampaignIdeas = async (prompt) => {
 
 // Generate campaign content suggestions using OpenAI API
 export const generateContentSuggestions = async (campaignData) => {
-  const api = createAuthenticatedRequest();
+  const api = createSimpleRequest();
   const response = await api.post('/marketing/ai/content-suggestions', campaignData);
   return response.data;
 };
 
 // Analyze target audience using OpenAI API
 export const analyzeTargetAudience = async (audienceData) => {
-  const api = createAuthenticatedRequest();
+  const api = createSimpleRequest();
   const response = await api.post('/marketing/ai/analyze-audience', audienceData);
   return response.data;
 };
 
 // Optimize campaign using AI
 export const optimizeCampaign = async (campaignId) => {
-  const api = createAuthenticatedRequest();
+  const api = createSimpleRequest();
   const response = await api.post(`/marketing/ai/optimize-campaign/${campaignId}`);
   return response.data;
 };
