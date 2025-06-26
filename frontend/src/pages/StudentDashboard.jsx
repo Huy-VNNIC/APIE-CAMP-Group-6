@@ -22,6 +22,7 @@ import {
   Alert,
   Badge
 } from '@mui/material';
+import StudentLayout from '../components/StudentLayout';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';

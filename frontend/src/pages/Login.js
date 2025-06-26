@@ -77,17 +77,19 @@ const Login = () => {
       
       // Check for marketing mock login
       if (username === 'marketing' && password === 'marketing123') {
-        // Mock marketing login
+        // Use real marketing user token for mock login
+        const realToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWQyMjhkZDc5NTU5NDk5M2FiNDc5ZSIsInJvbGUiOiJtYXJrZXRpbmciLCJpYXQiOjE3NTA5MzQxNTcsImV4cCI6MTc1MTAyMDU1N30.2pBS-G07DKPnNXQz6fze58knB2X1D-qe5nMXEPMJFWE';
+        
         const userData = {
-          id: 'marketing-123',
+          id: '685d228dd795594993ab479e',
           username: 'marketing',
           fullName: 'Marketing Manager',
           email: 'marketing@example.com',
           role: 'marketing'
         };
         
-        // Store user data in context
-        login(userData, 'mock-token-marketing-123');
+        // Store user data in context with real token
+        login(userData, realToken);
         
         // Navigate to marketing dashboard
         navigate('/marketing');

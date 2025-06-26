@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:4.4.18
+    container_name: coding-platform-db
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=coding_platform
+    command: mongod --bind_ip_all
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

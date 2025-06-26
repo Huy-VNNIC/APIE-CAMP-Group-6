@@ -538,6 +538,7 @@ const StudentAnalytics = () => {
         )}
       </Paper>
     </Container>
+    </StudentLayout>
   );
 };
 

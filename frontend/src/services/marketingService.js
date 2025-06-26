@@ -158,6 +158,17 @@ export const deleteMetric = async (id) => {
   return response.data;
 };
 
+// Analytics specific function  
+export const getEngagementMetrics = async (timeRange = '30days', campaignId = 'all') => {
+  const api = createAuthenticatedRequest();
+  const params = new URLSearchParams();
+  if (timeRange) params.append('timeRange', timeRange);
+  if (campaignId && campaignId !== 'all') params.append('campaignId', campaignId);
+  
+  const response = await api.get(`/marketing/engagement-metrics?${params.toString()}`);
+  return response.data;
+};
+
 const marketingService = {
   getAllCampaigns,
   getCampaignById,
@@ -181,7 +192,8 @@ const marketingService = {
   getMetricById,
   createMetric,
   updateMetric,
-  deleteMetric
+  deleteMetric,
+  getEngagementMetrics
 };
 
 export default marketingService;

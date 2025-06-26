@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Container, Typography, Box, Paper, Grid, TextField,
   Button, MenuItem, FormControl, InputLabel, Select,
   Chip, FormHelperText, CircularProgress, Alert,
-  InputAdornment
+  InputAdornment, Card, CardContent, Divider, Accordion,
+  AccordionSummary, AccordionDetails
 } from '@mui/material';
+import { 
+  ExpandMore as ExpandMoreIcon,
+  AutoAwesome as AIIcon,
+  Lightbulb as IdeaIcon 
+} from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { createCampaign, getCampaignById, updateCampaign } from '../../services/marketingService';
+import { generateCampaignIdeas } from '../../services/aiService';
 
 // Channel options
 const channelOptions = [
@@ -58,6 +65,12 @@ const CampaignForm = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+  const [campaignCount, setCampaignCount] = useState(0);
+  
+  // AI state
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [aiPrompt, setAiPrompt] = useState('');
 
   // Fetch campaign data if in edit mode
   useEffect(() => {
@@ -166,6 +179,53 @@ const CampaignForm = () => {
     return errors;
   };
 
+  // AI Functions
+  const handleAIGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      setError('Please enter a description for AI campaign generation');
+      return;
+    }
+
+    try {
+      setAiLoading(true);
+      setError(null);
+      
+      const response = await generateCampaignIdeas(aiPrompt);
+      if (response.success && response.ideas && response.ideas.length > 0) {
+        setAiSuggestions(response.ideas);
+      } else {
+        setError('Failed to generate AI suggestions. Please try again.');
+      }
+    } catch (err) {
+      console.error('AI Generation Error:', err);
+      setError('AI service temporarily unavailable. Please try again later.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applyAISuggestion = (suggestion) => {
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setMonth(today.getMonth() + 1);
+
+    setFormData({
+      title: suggestion.title,
+      description: suggestion.description,
+      startDate: today,
+      endDate: endDate,
+      targetAudience: suggestion.targetAudience || 'all',
+      status: 'draft',
+      channels: suggestion.channels || ['email', 'social'],
+      budget: 1000 // Default budget
+    });
+
+    // Clear AI suggestions after applying
+    setAiSuggestions([]);
+    setAiPrompt('');
+    setSuccess('AI suggestion applied! You can now modify and submit the campaign.');
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -191,33 +251,60 @@ const CampaignForm = () => {
       if (isEditMode) {
         await updateCampaign(id, payload);
         setSuccess('Campaign updated successfully!');
+        // Navigate back for edit mode
+        setTimeout(() => {
+          navigate('/marketing/campaigns');
+        }, 2000);
       } else {
-        await createCampaign(payload);
-        setSuccess('Campaign created successfully!');
+        const result = await createCampaign(payload);
+        const campaignId = result.data._id;
+        setCampaignCount(prev => prev + 1);
+        setSuccess(
+          `🎉 Campaign "${payload.title}" created successfully! Campaign ID: ${campaignId}`
+        );
+        console.log('Campaign created:', result.data);
         
-        // Reset form after successful creation
-        if (!isEditMode) {
-          setFormData({
-            title: '',
-            description: '',
-            startDate: null,
-            endDate: null,
-            targetAudience: 'all',
-            status: 'draft',
-            channels: [],
-            budget: 0
-          });
+        // Reset form immediately for new campaign creation
+        setFormData({
+          title: '',
+          description: '',
+          startDate: null,
+          endDate: null,
+          targetAudience: 'all',
+          status: 'draft',
+          channels: [],
+          budget: 0
+        });
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setSuccess(null);
+        }, 5000);
+      }
+      
+    } catch (err) {
+      console.error('Error saving campaign:', err);
+      
+      // More detailed error handling
+      let errorMessage = isEditMode ? 'Failed to update campaign. Please try again.' : 'Failed to create campaign. Please try again.';
+      
+      if (err.response) {
+        // Server responded with error status
+        console.error('Server error response:', err.response.data);
+        if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.errors) {
+          errorMessage = err.response.data.errors.map(e => e.msg).join(', ');
+        }
+      } else if (err.message) {
+        // Network or other error
+        console.error('Error message:', err.message);
+        if (err.message.includes('token')) {
+          errorMessage = 'Authentication failed. Please login again.';
         }
       }
       
-      // Navigate back to campaigns list after short delay
-      setTimeout(() => {
-        navigate('/marketing/campaigns');
-      }, 1500);
-      
-    } catch (err) {
-      setError(isEditMode ? 'Failed to update campaign. Please try again.' : 'Failed to create campaign. Please try again.');
-      console.error('Error saving campaign:', err);
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -233,9 +320,132 @@ const CampaignForm = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        {isEditMode ? 'Edit Campaign' : 'Create New Campaign'}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          {isEditMode ? 'Edit Campaign' : 'Create New Campaign'}
+        </Typography>
+        
+        {!isEditMode && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {campaignCount > 0 && (
+              <Chip 
+                label={`${campaignCount} campaign${campaignCount > 1 ? 's' : ''} created`} 
+                color="success" 
+                size="small"
+              />
+            )}
+            <Button 
+              variant="outlined" 
+              color="primary"
+              component={Link}
+              to="/marketing/campaigns"
+            >
+              View All Campaigns
+            </Button>
+          </Box>
+        )}
+      </Box>
+      
+      {/* AI Assistant Panel */}
+      {!isEditMode && (
+        <Card sx={{ mb: 3, border: '2px solid', borderColor: 'primary.main' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <AIIcon sx={{ mr: 1, color: 'primary.main' }} />
+              <Typography variant="h6" color="primary">
+                AI Campaign Assistant
+              </Typography>
+            </Box>
+            
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Describe your campaign goals and let AI generate campaign ideas for you!
+            </Typography>
+            
+            {/* Quick AI Prompts */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                Quick Ideas:
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {[
+                  'Promote coding bootcamp for beginners',
+                  'Advanced JavaScript masterclass',
+                  'Web development certification program',
+                  'Mobile app development course',
+                  'Data science and AI courses'
+                ].map((prompt) => (
+                  <Chip
+                    key={prompt}
+                    label={prompt}
+                    size="small"
+                    variant="outlined"
+                    clickable
+                    onClick={() => setAiPrompt(prompt)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Box>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <TextField
+                fullWidth
+                placeholder="e.g., 'Create a campaign to promote coding courses for beginners...'"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                multiline
+                rows={2}
+                disabled={aiLoading}
+              />
+              <Button
+                variant="contained"
+                onClick={handleAIGenerate}
+                disabled={aiLoading || !aiPrompt.trim()}
+                startIcon={aiLoading ? <CircularProgress size={20} /> : <IdeaIcon />}
+                sx={{ minWidth: 120 }}
+              >
+                {aiLoading ? 'Generating...' : 'Generate'}
+              </Button>
+            </Box>
+            
+            {/* AI Suggestions */}
+            {aiSuggestions.length > 0 && (
+              <Box>
+                <Divider sx={{ mb: 2 }} />
+                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                  AI Generated Campaign Ideas:
+                </Typography>
+                
+                {aiSuggestions.map((suggestion, index) => (
+                  <Card key={index} variant="outlined" sx={{ mb: 2 }}>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        {suggestion.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {suggestion.description}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                        <Chip label={`Target: ${suggestion.targetAudience}`} size="small" />
+                        {suggestion.channels?.map((channel) => (
+                          <Chip key={channel} label={channel} size="small" variant="outlined" />
+                        ))}
+                      </Box>
+                      <Button 
+                        variant="outlined" 
+                        size="small"
+                        onClick={() => applyAISuggestion(suggestion)}
+                      >
+                        Use This Idea
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
       
       {/* Show error/success messages */}
       {error && (

@@ -1,20 +1,7 @@
 import axios from 'axios';
+import { createAuthenticatedRequest } from './authService';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-// Create axios instance with auth token
-const createAuthenticatedRequest = () => {
-  const token = localStorage.getItem('token');
-  
-  return axios.create({
-    baseURL: API_URL,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-auth-token': token,
-      'x-user-role': 'marketing'
-    }
-  });
-};
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Generate campaign ideas using OpenAI API
 export const generateCampaignIdeas = async (prompt) => {
