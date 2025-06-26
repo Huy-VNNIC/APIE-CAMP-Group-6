@@ -83,7 +83,7 @@ exports.createCampaign = async (req, res) => {
       status,
       channels,
       budget,
-      createdBy: req.user.id
+      createdBy: req.user?.id || '507f1f77bcf86cd799439011' // Default ObjectId for marketing user
     });
 
     const campaign = await newCampaign.save();

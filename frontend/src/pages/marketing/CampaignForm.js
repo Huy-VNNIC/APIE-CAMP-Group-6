@@ -5,12 +5,13 @@ import {
   Button, MenuItem, FormControl, InputLabel, Select,
   Chip, FormHelperText, CircularProgress, Alert,
   InputAdornment, Card, CardContent, Divider, Accordion,
-  AccordionSummary, AccordionDetails
+  AccordionSummary, AccordionDetails, Snackbar
 } from '@mui/material';
 import { 
   ExpandMore as ExpandMoreIcon,
   AutoAwesome as AIIcon,
-  Lightbulb as IdeaIcon 
+  Lightbulb as IdeaIcon,
+  CheckCircle as SuccessIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -71,6 +72,11 @@ const CampaignForm = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [aiPrompt, setAiPrompt] = useState('');
+
+  // Snackbar state for better notifications
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   // Fetch campaign data if in edit mode
   useEffect(() => {
@@ -230,9 +236,12 @@ const CampaignForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('Form submission started with data:', formData);
+    
     // Validate form
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
+      console.log('Form validation errors:', errors);
       setFormErrors(errors);
       return;
     }
@@ -248,7 +257,10 @@ const CampaignForm = () => {
         budget: Number(formData.budget)
       };
       
+      console.log('Sending payload to API:', payload);
+      
       if (isEditMode) {
+        console.log('Updating campaign with ID:', id);
         await updateCampaign(id, payload);
         setSuccess('Campaign updated successfully!');
         // Navigate back for edit mode
@@ -256,12 +268,16 @@ const CampaignForm = () => {
           navigate('/marketing/campaigns');
         }, 2000);
       } else {
+        console.log('Creating new campaign...');
         const result = await createCampaign(payload);
+        console.log('Campaign creation result:', result);
+        
         const campaignId = result.data._id;
         setCampaignCount(prev => prev + 1);
-        setSuccess(
-          `🎉 Campaign "${payload.title}" created successfully! Campaign ID: ${campaignId}`
-        );
+        
+        const successMsg = `🎉 Campaign "${payload.title}" created successfully! Campaign ID: ${campaignId}`;
+        setSuccess(successMsg);
+        showNotification(successMsg, 'success');
         console.log('Campaign created:', result.data);
         
         // Reset form immediately for new campaign creation
@@ -296,19 +312,63 @@ const CampaignForm = () => {
         } else if (err.response.data.errors) {
           errorMessage = err.response.data.errors.map(e => e.msg).join(', ');
         }
+        
+        // Add specific error messages for common issues
+        if (err.response.status === 400) {
+          errorMessage = 'Please check your form data. Some fields may be invalid.';
+        } else if (err.response.status === 500) {
+          errorMessage = 'Server error. Please try again in a few moments.';
+        }
       } else if (err.message) {
         // Network or other error
-        console.error('Error message:', err.message);
-        if (err.message.includes('token')) {
-          errorMessage = 'Authentication failed. Please login again.';
+        if (err.message.includes('Network Error')) {
+          errorMessage = 'Network connection error. Please check your internet connection and try again.';
+        } else if (err.message.includes('timeout')) {
+          errorMessage = 'Request timed out. Please try again.';
         }
+        errorMessage += ` (${err.message})`;
       }
       
       setError(errorMessage);
+      
+      // Auto-clear error after 10 seconds
+      setTimeout(() => {
+        setError(null);
+      }, 10000);
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Snackbar notification helper
+  const showNotification = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  useEffect(() => {
+    if (success) {
+      setSnackbarMessage(success);
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      setSnackbarMessage(error);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  }, [error]);
 
   if (loading) {
     return (
@@ -644,6 +704,20 @@ const CampaignForm = () => {
           </Grid>
         </Box>
       </Paper>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+        action={
+          <Button color="inherit" onClick={handleSnackbarClose} size="small">
+            Close
+          </Button>
+        }
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
     </Container>
   );
 };
