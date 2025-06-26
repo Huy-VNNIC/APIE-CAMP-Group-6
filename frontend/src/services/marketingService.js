@@ -1,15 +1,91 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+// Use the proxy for API calls in development
+const API_URL = '/api';
 
 // Create simple axios instance without auth requirements
 const createSimpleRequest = () => {
-  return axios.create({
+  console.log('Creating axios instance with base URL:', API_URL);
+  
+  const instance = axios.create({
     baseURL: API_URL,
     headers: {
       'Content-Type': 'application/json'
-    }
+    },
+    timeout: 30000, // 30 second timeout
+    withCredentials: false
   });
+
+  // Add request interceptor for debugging
+  instance.interceptors.request.use(
+    (config) => {
+      console.log('Making request:', {
+        method: config.method,
+        url: config.url,
+        baseURL: config.baseURL,
+        fullURL: `${config.baseURL}${config.url}`,
+        data: config.data
+      });
+      return config;
+    },
+    (error) => {
+      console.error('Request interceptor error:', error);
+      return Promise.reject(error);
+    }
+  );
+  
+  // Add response interceptor for debugging
+  instance.interceptors.response.use(
+    (response) => {
+      console.log('Response received:', {
+        status: response.status,
+        data: response.data,
+        url: response.config.url
+      });
+      return response;
+    },
+    (error) => {
+      console.error('Response interceptor error:', {
+        message: error.message,
+        response: error.response,
+        request: error.request,
+        config: error.config
+      });
+      return Promise.reject(error);
+    }
+  );
+
+  // Add request interceptor for debugging
+  instance.interceptors.request.use(
+    (config) => {
+      console.log(`Making API request to: ${config.baseURL}${config.url}`);
+      return config;
+    },
+    (error) => {
+      console.error('Request error:', error);
+      return Promise.reject(error);
+    }
+  );
+
+  // Add response interceptor for debugging
+  instance.interceptors.response.use(
+    (response) => {
+      console.log(`API response from: ${response.config.url}`, response.data);
+      return response;
+    },
+    (error) => {
+      console.error('API error:', error);
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Request timeout. Please try again.');
+      }
+      if (error.message === 'Network Error') {
+        throw new Error('Cannot connect to server. Please check if the backend is running.');
+      }
+      throw error;
+    }
+  );
+
+  return instance;
 };
 
 // Campaign API calls
@@ -26,9 +102,37 @@ export const getCampaignById = async (id) => {
 };
 
 export const createCampaign = async (campaignData) => {
-  const api = createSimpleRequest();
-  const response = await api.post('/marketing/campaigns', campaignData);
-  return response.data;
+  try {
+    console.log('Creating campaign with data:', campaignData);
+    console.log('API URL being used:', API_URL);
+    
+    const api = createSimpleRequest();
+    console.log('Making POST request to:', `${API_URL}/marketing/campaigns`);
+    
+    const response = await api.post('/marketing/campaigns', campaignData);
+    console.log('Campaign creation response:', response);
+    
+    return response.data;
+  } catch (error) {
+    console.error('Campaign creation error details:', {
+      message: error.message,
+      response: error.response,
+      status: error.response?.status,
+      data: error.response?.data,
+      config: error.config
+    });
+    
+    // Improve error message
+    if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+      throw new Error('Cannot connect to server. Please check if the backend is running.');
+    } else if (error.response?.status === 404) {
+      throw new Error('API endpoint not found. Please check the backend configuration.');
+    } else if (error.response?.status >= 500) {
+      throw new Error('Server error. Please try again later.');
+    }
+    
+    throw error;
+  }
 };
 
 export const updateCampaign = async (id, campaignData) => {

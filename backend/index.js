@@ -32,7 +32,12 @@ const io = initializeSocketServer(server);
 
 // Middleware
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"],
+  origin: [
+    "http://localhost:3000", 
+    "http://localhost:3001",
+    "https://fantastic-halibut-g45prq7jx5vv39qrp-3000.app.github.dev",
+    "https://fantastic-halibut-g45prq7jx5vv39qrp-3001.app.github.dev"
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }));

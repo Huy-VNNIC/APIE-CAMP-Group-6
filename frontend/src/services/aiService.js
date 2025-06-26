@@ -1,15 +1,50 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+// Use the proxy for API calls in development
+const API_URL = '/api';
 
 // Create simple axios instance without auth requirements
 const createSimpleRequest = () => {
-  return axios.create({
+  const instance = axios.create({
     baseURL: API_URL,
     headers: {
       'Content-Type': 'application/json'
-    }
+    },
+    timeout: 30000, // 30 second timeout
+    withCredentials: false
   });
+
+  // Add request interceptor for debugging
+  instance.interceptors.request.use(
+    (config) => {
+      console.log(`Making AI API request to: ${config.baseURL}${config.url}`);
+      return config;
+    },
+    (error) => {
+      console.error('AI Request error:', error);
+      return Promise.reject(error);
+    }
+  );
+
+  // Add response interceptor for debugging
+  instance.interceptors.response.use(
+    (response) => {
+      console.log(`AI API response from: ${response.config.url}`, response.data);
+      return response;
+    },
+    (error) => {
+      console.error('AI API error:', error);
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('AI request timeout. Please try again.');
+      }
+      if (error.message === 'Network Error') {
+        throw new Error('Cannot connect to AI service. Please check if the backend is running.');
+      }
+      throw error;
+    }
+  );
+
+  return instance;
 };
 
 // Generate campaign ideas using OpenAI API

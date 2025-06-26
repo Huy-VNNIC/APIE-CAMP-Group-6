@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Frontend Connection</title>
+</head>
+<body>
+    <h1>Test Frontend to Backend Connection</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // Test 1: Direct fetch to backend
+                console.log('Testing direct fetch to backend...');
+                const response = await fetch('http://localhost:5001/api/marketing/campaigns');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>✅ SUCCESS!</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Campaigns found: ${data.count}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                // Test 2: Create campaign
+                console.log('Testing campaign creation...');
+                const createResponse = await fetch('http://localhost:5001/api/marketing/campaigns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Campaign from HTML',
+                        description: 'Testing direct connection',
+                        startDate: '2025-07-01',
+                        endDate: '2025-08-01',
+                        targetAudience: 'students',
+                        status: 'draft',
+                        channels: ['email'],
+                        budget: 1000
+                    })
+                });
+                
+                if (createResponse.ok) {
+                    const createData = await createResponse.json();
+                    resultDiv.innerHTML += `<h3>✅ CREATE TEST SUCCESS!</h3><pre>${JSON.stringify(createData, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML += `<h3>❌ CREATE TEST FAILED!</h3><p>Status: ${createResponse.status}</p>`;
+                }
+                
+            } catch (error) {
+                console.error('Connection test error:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ ERROR!</h3>
+                    <p>Error: ${error.message}</p>
+                    <p>This indicates a connection problem between frontend and backend.</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
