@@ -35,7 +35,8 @@ import CampaignDetail from './pages/marketing/CampaignDetail';
 import CampaignForm from './pages/marketing/CampaignForm';
 import ContentManagement from './pages/marketing/ContentManagement';
 import PartnershipsManagement from './pages/marketing/PartnershipsManagement';
-import Analytics from './pages/marketing/Analytics';
+// import Analytics from './pages/marketing/Analytics';
+import AnalyticsNew from './pages/marketing/AnalyticsNew';
 import PromotionalContentList from './pages/marketing/PromotionalContentList';
 import PromotionalContentDetail from './pages/marketing/PromotionalContentDetail';
 import PromotionalContentForm from './pages/marketing/PromotionalContentForm';
@@ -307,7 +308,7 @@ function App() {
                 element={
                   <PrivateRoute marketingRequired={true}>
                     <Layout>
-                      <Analytics />
+                      <AnalyticsNew />
                     </Layout>
                   </PrivateRoute>
                 } 

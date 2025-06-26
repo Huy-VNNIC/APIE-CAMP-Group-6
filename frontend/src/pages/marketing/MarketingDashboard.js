@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../../contexts/UserContext';
 import { Container, Typography, Grid, Paper, Box, Card, CardContent, Button, CircularProgress, Alert } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Campaign as CampaignIcon, 
   Article as ContentIcon, 
@@ -83,6 +83,7 @@ const MOCK_METRICS = {
 
 const MarketingDashboard = () => {
   const { user } = useContext(UserContext);
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState([]);
   const [metrics, setMetrics] = useState({});
   const [loading, setLoading] = useState(true);
@@ -281,7 +282,7 @@ const MarketingDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card 
             component={Link} 
-            to="/marketing/metrics" 
+            to="/marketing/analytics" 
             sx={{ 
               height: '100%', 
               display: 'flex', 
