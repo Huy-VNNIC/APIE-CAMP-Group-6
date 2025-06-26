@@ -104,7 +104,7 @@ exports.createPromotionalContent = async (req, res) => {
       linkUrl,
       status,
       campaign,
-      createdBy: req.user.id
+      createdBy: req.user?.id || '507f1f77bcf86cd799439011' // Default ObjectId for marketing user
     });
 
     const savedContent = await newContent.save();

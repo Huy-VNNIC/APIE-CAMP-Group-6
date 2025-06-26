@@ -36,6 +36,9 @@ import CampaignForm from './pages/marketing/CampaignForm';
 import ContentManagement from './pages/marketing/ContentManagement';
 import PartnershipsManagement from './pages/marketing/PartnershipsManagement';
 import Analytics from './pages/marketing/Analytics';
+import PromotionalContentList from './pages/marketing/PromotionalContentList';
+import PromotionalContentDetail from './pages/marketing/PromotionalContentDetail';
+import PromotionalContentForm from './pages/marketing/PromotionalContentForm';
 // import AIEnhancedCampaignForm from './pages/marketing/AIEnhancedCampaignForm';
 
 import './App.css';
@@ -239,6 +242,48 @@ function App() {
                   <PrivateRoute marketingRequired={true}>
                     <Layout>
                       <ContentManagement />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+
+              {/* Promotional Content Routes */}
+              <Route 
+                path="/marketing/promotional-content" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <PromotionalContentList />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/marketing/promotional-content/new" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <PromotionalContentForm />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/marketing/promotional-content/:id" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <PromotionalContentDetail />
+                    </Layout>
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/marketing/promotional-content/:id/edit" 
+                element={
+                  <PrivateRoute marketingRequired={true}>
+                    <Layout>
+                      <PromotionalContentForm />
                     </Layout>
                   </PrivateRoute>
                 } 
