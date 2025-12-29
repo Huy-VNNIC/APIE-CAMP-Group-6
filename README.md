@@ -3,7 +3,7 @@
 ### **Japan APIE Advance Camp 2024 Final Project**  
 *An Industry-Academia Collaboration Platform for Programming Education with AI Integration*
 
-[![Japan APIE Advance Camp](https://img.shields.io/badge/Japan-APIE_Advance_Camp-FF0000?style=for-the-badge&logo=japan&logoColor=white)]([https://apie-camp.jp/](https://apie.soi.asia/camp/#advanced-camps))
+[![Japan APIE Advance Camp](https://img.shields.io/badge/Japan-APIE_Advance_Camp-FF0000?style=for-the-badge&logo=japan&logoColor=white)]([[https://apie-camp.jp/](https://apie.soi.asia/camp/#advanced-camps)](https://apie.soi.asia/camp/#advanced-camps))
 [![Academic Project](https://img.shields.io/badge/Academic-Final_Project-0077B5?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Feroz455/APIE-CAMP-Group-6)
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org/)
